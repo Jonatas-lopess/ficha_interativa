@@ -2,9 +2,9 @@ import { useRef, useState } from "react";
 import { importarDeArquivo } from "../utils/exportImport";
 import { SheetRegistryEntry, SheetTipo } from "../types";
 
-/**
- * Componente de card de ação (criar/importar).
- */
+// ---------------------------------------------------------------------------
+// ActionCard
+// ---------------------------------------------------------------------------
 interface ActionCardProps {
   id: string;
   icon: string | React.ReactNode;
@@ -45,9 +45,9 @@ function ActionCard({
   );
 }
 
-/**
- * Componente de card para ficha existente na lista.
- */
+// ---------------------------------------------------------------------------
+// SheetCard
+// ---------------------------------------------------------------------------
 interface SheetCardProps {
   entry: SheetRegistryEntry;
   onOpen: () => void;
@@ -91,7 +91,6 @@ function SheetCard({
   return (
     <div className="group relative bg-surface border border-surface-light/50 rounded-xl p-4 transition-all duration-200 hover:border-gold/20 hover:bg-surface-light">
       <div className="flex items-center justify-between gap-3">
-        {/* Informações principais */}
         <button
           onClick={onOpen}
           className="flex-1 text-left cursor-pointer min-w-0"
@@ -110,7 +109,6 @@ function SheetCard({
           </div>
         </button>
 
-        {/* Menu de ações */}
         <div className="relative">
           <button
             onClick={() => setShowMenu(!showMenu)}
@@ -131,7 +129,6 @@ function SheetCard({
 
           {showMenu && (
             <>
-              {/* Overlay para fechar o menu */}
               <div
                 className="fixed inset-0 z-10"
                 onClick={() => setShowMenu(false)}
@@ -193,9 +190,9 @@ function SheetCard({
   );
 }
 
-/**
- * Seção de fichas por tipo (Completas ou Simplificadas).
- */
+// ---------------------------------------------------------------------------
+// SheetSection (generic, reused in both player and GM areas)
+// ---------------------------------------------------------------------------
 interface SheetSectionProps {
   title: string;
   icon: string;
@@ -274,7 +271,6 @@ function SheetSection({
       onDragLeave={() => setDragOver(false)}
       onDrop={handleDrop}
     >
-      {/* Header da seção */}
       <div className="flex items-center gap-3 mb-4">
         <span className={`text-xl ${iconColor}`}>{icon}</span>
         <h2 className="font-title text-lg text-parchment">{title}</h2>
@@ -283,7 +279,6 @@ function SheetSection({
         </span>
       </div>
 
-      {/* Ações */}
       <div
         className={`grid ${extraAction ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-2"} gap-3 mb-4`}
       >
@@ -320,7 +315,6 @@ function SheetSection({
         onChange={handleInputChange}
       />
 
-      {/* Lista de fichas */}
       {fichas.length > 0 ? (
         <div className="space-y-2">
           {fichas.map((entry) => (
@@ -356,9 +350,125 @@ function SheetSection({
   );
 }
 
-/**
- * Página inicial — gerencia e navega entre fichas.
- */
+// ---------------------------------------------------------------------------
+// GMSection — collapsible panel wrapping simplified + NPC + codex
+// ---------------------------------------------------------------------------
+interface GMSectionProps {
+  fichasNpc: SheetRegistryEntry[];
+  fichasSimplificadas: SheetRegistryEntry[];
+  onCriar: (tipo: SheetTipo) => void;
+  onImportar: (data: any) => void;
+  onOpen: (id: string) => void;
+  onDelete: (id: string) => void;
+  onDuplicate: (id: string) => void;
+  onExport: (id: string) => void;
+  onOpenCodex: () => void;
+}
+
+function GMSection({
+  fichasNpc,
+  fichasSimplificadas,
+  onCriar,
+  onImportar,
+  onOpen,
+  onDelete,
+  onDuplicate,
+  onExport,
+  onOpenCodex,
+}: GMSectionProps) {
+  const [open, setOpen] = useState(false);
+  const totalGM = fichasNpc.length + fichasSimplificadas.length;
+
+  return (
+    <div className="mt-10">
+      {/* Divider + toggle */}
+      <button
+        id="btn-toggle-gm-section"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full group flex items-center gap-3 cursor-pointer"
+      >
+        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-surface-light to-transparent" />
+        <span className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-surface-light bg-surface/80 text-parchment-dim text-xs backdrop-blur-sm transition-all duration-300 group-hover:border-injury-severe/40 group-hover:text-injury-severe whitespace-nowrap select-none">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className={`w-3 h-3 transition-transform duration-300 ${open ? "rotate-180" : ""}`}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2.5}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+          ⚙ Área do Mestre
+          {totalGM > 0 && (
+            <span className="bg-injury-severe/20 text-injury-severe rounded-full px-1.5 py-0.5 text-[10px] font-medium">
+              {totalGM}
+            </span>
+          )}
+        </span>
+        <div className="flex-1 h-px bg-gradient-to-r from-surface-light via-surface-light to-transparent" />
+      </button>
+
+      {/* Collapsible body */}
+      <div
+        className={`overflow-hidden transition-all duration-500 ease-in-out ${
+          open ? "max-h-[9999px] opacity-100 mt-8" : "max-h-0 opacity-0"
+        }`}
+      >
+        {/* GM header label */}
+        <div className="flex items-center gap-2 mb-6">
+          <span className="text-xs uppercase tracking-widest text-injury-severe/70 font-title">
+            Ferramentas do Mestre
+          </span>
+        </div>
+
+        <div className="space-y-10">
+          <SheetSection
+            title="Monstros e Inimigos"
+            icon="💀"
+            fichas={fichasNpc}
+            tipo="npc"
+            variant="severe"
+            onCriar={onCriar}
+            onImportar={onImportar}
+            onOpen={onOpen}
+            onDelete={onDelete}
+            onDuplicate={onDuplicate}
+            onExport={onExport}
+            extraAction={
+              <ActionCard
+                id="btn-abrir-codice"
+                icon="📖"
+                title="Códice de Ameaças"
+                description="Consulte o catálogo de ameaças genéricas e monstros."
+                onClick={onOpenCodex}
+                variant="severe"
+              />
+            }
+          />
+
+          <SheetSection
+            title="Fichas Simplificadas"
+            icon="🛡"
+            fichas={fichasSimplificadas}
+            tipo="simplificada"
+            variant="arcane"
+            onCriar={onCriar}
+            onImportar={onImportar}
+            onOpen={onOpen}
+            onDelete={onDelete}
+            onDuplicate={onDuplicate}
+            onExport={onExport}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// HomePage
+// ---------------------------------------------------------------------------
 interface HomePageProps {
   fichasCompletas: SheetRegistryEntry[];
   fichasNpc: SheetRegistryEntry[];
@@ -395,77 +505,48 @@ export default function HomePage({
             ✦ Ficha Interativa
           </h1>
           <p className="text-sm text-parchment-dim max-w-md mx-auto leading-relaxed">
-            Sistema Narrativo 2d10 — Gerencie suas fichas de personagem e NPCs.
+            Sistema Narrativo 2d10 — Gerencie sua ficha de personagem.
           </p>
           <div className="h-px bg-gradient-to-r from-transparent via-gold/30 to-transparent mt-6" />
         </header>
 
-        {/* Seções */}
-        <div className="space-y-10">
-          <SheetSection
-            title="Fichas Completas"
-            icon="⚔"
-            fichas={fichasCompletas}
-            tipo="completa"
-            variant="gold"
-            onCriar={onCriar}
-            onImportar={onImportar}
-            onOpen={onOpen}
-            onDelete={onDelete}
-            onDuplicate={onDuplicate}
-            onExport={onExport}
-            extraAction={
-              <ActionCard
-                id="btn-abrir-catalogo-tracos"
-                icon="✦"
-                title="Catálogo de Traços"
-                description="Consulte e adicione traços diretamente na ficha do personagem."
-                onClick={onOpenCatalogTracos}
-                variant="gold"
-              />
-            }
-          />
+        {/* Player section */}
+        <SheetSection
+          title="Fichas de Personagem"
+          icon="⚔"
+          fichas={fichasCompletas}
+          tipo="completa"
+          variant="gold"
+          onCriar={onCriar}
+          onImportar={onImportar}
+          onOpen={onOpen}
+          onDelete={onDelete}
+          onDuplicate={onDuplicate}
+          onExport={onExport}
+          extraAction={
+            <ActionCard
+              id="btn-abrir-catalogo-tracos"
+              icon="✦"
+              title="Catálogo de Traços"
+              description="Consulte e adicione traços diretamente na ficha do personagem."
+              onClick={onOpenCatalogTracos}
+              variant="gold"
+            />
+          }
+        />
 
-          <SheetSection
-            title="Monstros e Inimigos"
-            icon="💀"
-            fichas={fichasNpc}
-            tipo="npc"
-            variant="severe"
-            onCriar={onCriar}
-            onImportar={onImportar}
-            onOpen={onOpen}
-            onDelete={onDelete}
-            onDuplicate={onDuplicate}
-            onExport={onExport}
-            extraAction={
-              <ActionCard
-                id="btn-abrir-codice"
-                icon="📖"
-                title="Códice de Ameaças"
-                description="Consulte o catálogo de ameaças genéricas e monstros."
-                onClick={onOpenCodex}
-                variant="severe"
-              />
-            }
-          />
-
-          <div className="h-px bg-gradient-to-r from-transparent via-surface-light to-transparent" />
-
-          <SheetSection
-            title="Fichas Simplificadas"
-            icon="🛡"
-            fichas={fichasSimplificadas}
-            tipo="simplificada"
-            variant="arcane"
-            onCriar={onCriar}
-            onImportar={onImportar}
-            onOpen={onOpen}
-            onDelete={onDelete}
-            onDuplicate={onDuplicate}
-            onExport={onExport}
-          />
-        </div>
+        {/* GM section — collapsed by default */}
+        <GMSection
+          fichasNpc={fichasNpc}
+          fichasSimplificadas={fichasSimplificadas}
+          onCriar={onCriar}
+          onImportar={onImportar}
+          onOpen={onOpen}
+          onDelete={onDelete}
+          onDuplicate={onDuplicate}
+          onExport={onExport}
+          onOpenCodex={onOpenCodex}
+        />
 
         {/* Footer */}
         <footer className="mt-16 pb-8 text-center">
