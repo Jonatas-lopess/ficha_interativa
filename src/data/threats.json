@@ -1,0 +1,164 @@
+[
+  {
+    "id": "guarda-cidade",
+    "nome": "Guarda da Cidade",
+    "descricao": "Um indivíduo treinado para manter a ordem nas ruas de Whitmore. Pode ser um jovem idealista ou um veterano cínico, mas seu treinamento é o mesmo: proteger os cidadãos, fazer cumprir a lei e manter a formação. Sozinho, é um obstáculo. Em grupo, é uma muralha perigosa.",
+    "ranque": "Humano",
+    "estresseMax": 6,
+    "lesoes": { "leves": 6, "graves": 3, "criticas": 1 },
+    "proficiencias": [
+      "Combate (Formação de Lanças)",
+      "Social (Intimidação)",
+      "Investigação (Percepção Urbana)"
+    ],
+    "aspectos": ["Homem da Lei"],
+    "tracos": [
+      {
+        "nome": "Muralha de Escudos",
+        "conceito": "A base do treinamento da guarda é a disciplina defensiva e fechar as brechas.",
+        "gatilho": "Quando um guarda está adjacente a pelo menos outro guarda e sofre um ataque direto.",
+        "efeitos": [
+          {
+            "tipo": "Passivo",
+            "descricao": "A defesa coordenada faz com que qualquer ataque frontal corpo-a-corpo de um personagem tenha sua Posição ditada como Desesperada, a menos que o atacante utilize uma abordagem que inutilize os escudos ou quebre a formação."
+          }
+        ],
+        "limiteCusto": "Inativo se o guarda for isolado ou gravemente flanqueado.",
+        "origem": "Base"
+      },
+      {
+        "nome": "Avançar em Formação",
+        "conceito": "Treinados para lutar em equipe, criando aberturas uns para os outros e cercando oponentes.",
+        "gatilho": "Quando um personagem rola uma Falha (10-) contra a guarda engajada.",
+        "efeitos": [
+          {
+            "tipo": "Reativo",
+            "descricao": "Eles capitalizam no erro. A consequência imposta pelo Mestre é agravada pela superioridade numérica. Um dano que seria apenas Arriscado ou Leve é convertido em uma penalidade pior ou na aplicação direta de uma Lesão Grave."
+          }
+        ],
+        "limiteCusto": "Requer pelo menos dois guardas ameaçando o mesmo alvo.",
+        "origem": "Base"
+      }
+    ],
+    "equipamentos": [
+      "Lança Curta: Arma com grande alcance prático.",
+      "Escudo de Madeira: Peça chave na tática Muralha de Escudos.",
+      "Cota de Malha Parcial e Elmo de Aço: Proteção decente sem sacrificar mobilidade."
+    ],
+    "taticas": [
+      "Manter a Formação: Evitam se separar para manter os bônus defensivos.",
+      "Cercar e Flanquear: Usam números para aumentar riscos (Arriscada -> Desesperada).",
+      "Primeiro Controlar: Buscam desarmar ou intimidar antes de usar força letal.",
+      "Alerta: Ao sinal de desvantagem, recuam e chamam reforços."
+    ]
+  },
+  {
+    "id": "infante",
+    "nome": "Infante",
+    "descricao": "Um soldado profissional, espinha dorsal de qualquer exército organizado. Treinado para lutar e morrer em formação, seguindo ordens sem hesitar. Sua força reside na disciplina e na capacidade de lutar como parte de uma unidade coesa.",
+    "ranque": "Humano",
+    "estresseMax": 6,
+    "lesoes": { "leves": 6, "graves": 3, "criticas": 1 },
+    "proficiencias": [
+      "Combate (Linha de Espada e Escudo)",
+      "Atletismo (Fortitude Física)",
+      "Sobrevivência (Marcha Militar)"
+    ],
+    "aspectos": ["Membro do Exército"],
+    "tracos": [
+      {
+        "nome": "Disciplina de Ferro",
+        "conceito": "Treinamento brutal que substitui vontade individual por obediência inabalável.",
+        "gatilho": "Quando alvo de intimidações, pavor ou feitiços que afetem a coragem.",
+        "efeitos": [
+          {
+            "tipo": "Passivo",
+            "descricao": "Reduz o Efeito para Zero caso qualquer jogador tente quebrar as linhas através do medo: o Infante não recua."
+          }
+        ],
+        "limiteCusto": "Ativo enquanto sob ordens diretas ou vigília de um oficial.",
+        "origem": "Base"
+      },
+      {
+        "nome": "Avanço Implacável",
+        "conceito": "Avanço coordenado usando escudos de torre como arma de contundência.",
+        "gatilho": "Iniciativa do mestre ou retaliação em Falha (10-) do personagem.",
+        "efeitos": [
+          {
+            "tipo": "Ativável",
+            "descricao": "Golpe de escudo desequilibra o alvo. Afetados entram em Posição Desesperada para a próxima defesa."
+          },
+          {
+            "tipo": "Reativo",
+            "descricao": "O efeito ativável pode ser usado como retaliação em caso de falha do oponente."
+          }
+        ],
+        "limiteCusto": "1 Ponto de Estresse",
+        "origem": "Base"
+      }
+    ],
+    "equipamentos": [
+      "Espada Curta (Gladius): Letalidade em espaços apertados.",
+      "Escudo Torre (Scutum): Proteção titânica contra armas leves e flechas.",
+      "Brigantina e Elmo: Proteção sólida que pode absorver golpes fatais."
+    ],
+    "taticas": [
+      "Linha de Escudos: Rechaçam qualquer adentramento direto sem explosão prévia.",
+      "Empurrar e Golpear: Usam o Avanço Implacável para exaurir e atordoar.",
+      "Sem Misericórdia: Matadouros vivos. Consequências tendem a ser Graves ou Críticas."
+    ]
+  },
+  {
+    "id": "membro-gangue",
+    "nome": "Membro de Gangue",
+    "descricao": "Sobrevivente das vielas que vive pela lei do mais forte. Suas armas são a crueldade, astúcia e força dos números. Sozinho é um valentão, em grupo é uma praga.",
+    "ranque": "Humano",
+    "estresseMax": 6,
+    "lesoes": { "leves": 6, "graves": 3, "criticas": 1 },
+    "proficiencias": [
+      "Crime (Furtividade e Emboscada)",
+      "Combate (Briga de Rua Brutal)",
+      "Investigação (Sobrevivência nas Ruas)"
+    ],
+    "aspectos": ["Rato das Ruas"],
+    "tracos": [
+      {
+        "nome": "Golpe Baixo",
+        "conceito": "Briga de rua sem regras. Terra na cara ou chute na virilha.",
+        "gatilho": "Falha (10-) ou Sucesso com Custo (11-16) do jogador.",
+        "efeitos": [
+          {
+            "tipo": "Reativo",
+            "descricao": "Jogador sofre Desvantagem (3d10 pegar os 2 piores) na próxima rolagem devido à dor ou cegueira."
+          }
+        ],
+        "limiteCusto": "Trauma não acumulativo. Não inflige múltiplas desvantagens.",
+        "origem": "Base"
+      },
+      {
+        "nome": "A Força da Matilha",
+        "conceito": "Enxame que derruba lobos. Poder da superioridade numérica.",
+        "gatilho": "Enquanto o número de capangas for superior ao grupo de heróis.",
+        "efeitos": [
+          {
+            "tipo": "Passivo",
+            "descricao": "Defesas físicas cercadas têm Posição mínima Arriscada, escalando para Desesperada."
+          }
+        ],
+        "limiteCusto": "Moral quebra fácil se perderem a vantagem numérica ou de emboscada.",
+        "origem": "Base"
+      }
+    ],
+    "equipamentos": [
+      "Adaga ou Porrete: Armas sujas e enferrujadas.",
+      "Roupas de Couro Batido: Proteção puramente narrativa.",
+      "Utilitários: Areia para cegar, veneno barato ou cordas."
+    ],
+    "taticas": [
+      "Emboscada: Atacam em locais apertados e como consequências de reações.",
+      "Enxamear o Alvo: Focam no elo mais fraco ou herói já machucado.",
+      "Luta Limpa é Luta Perdida: Manipulam desvantagens narrativas.",
+      "Covardia Racional: Fogem assim que a situação se torna desfavorável."
+    ]
+  }
+]

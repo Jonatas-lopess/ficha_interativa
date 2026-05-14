@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 1.5rem;
+  }
+
+  body {
+    @apply bg-base text-parchment font-body antialiased;
+    min-height: 100vh;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-title;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-base;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-surface-light rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gold-dim;
+  }
+  /* Native select/option dark theme */
+  select {
+    @apply bg-base text-parchment;
+  }
+  option {
+    @apply bg-base text-parchment;
+  }
+  option:checked {
+    background: #1a1a28;
+  }
+}
+
+/* Toast timer bar animation */
+@keyframes shrink {
+  from { width: 100%; }
+  to { width: 0%; }
+}
