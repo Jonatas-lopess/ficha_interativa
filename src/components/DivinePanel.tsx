@@ -11,7 +11,6 @@ interface Props {
 }
 
 export default function DivinePanel({ divino, onUpdateDivino, onUpdateAnchors }: Props) {
-  if (!divino.ativo) return null
 
   const pesoInfo = PESO_DIVINO.find((p) => p.nivel === divino.pesoDivino) || PESO_DIVINO[0]
 

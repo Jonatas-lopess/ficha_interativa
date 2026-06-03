@@ -66,10 +66,10 @@ export default function DiceToast({ resultado, onDismiss, duration = 5000 }: Pro
 
   return (
     <div
-      className={`fixed z-50 bottom-6 right-4 w-72 transition-all duration-300 ${
+      className={`fixed z-50 top-16 right-4 w-72 transition-all duration-300 ${
         visible && !exiting
-          ? 'translate-x-0 opacity-100'
-          : 'translate-x-full opacity-0'
+          ? 'translate-y-0 opacity-100'
+          : '-translate-y-full opacity-0'
       }`}
     >
       <div className="bg-surface/95 backdrop-blur-md border border-surface-light rounded-xl shadow-xl overflow-hidden">

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import Header from './Header'
 import StressBar from './StressBar'
 import InjuryTracker from './InjuryTracker'
@@ -6,10 +7,26 @@ import AspectList from './AspectList'
 import TraitCard from './TraitCard'
 import DivinePanel from './DivinePanel'
 import InventoryList from './InventoryList'
-import DiceRoller from './DiceRoller'
 import StoryPanel from './StoryPanel'
-import SectionNav from './SectionNav'
+import FloatingDiceRoller from './FloatingDiceRoller'
 import { Character, RankData, RanqueNome, Divino, Ancora, Lesoes, LesaoDescricao } from '../types'
+
+type TabId = 'identidade' | 'combate' | 'tracos' | 'inventario' | 'divino'
+
+interface TabDef {
+  id: TabId
+  label: string
+  icon: string
+  conditional?: boolean
+}
+
+const TABS: TabDef[] = [
+  { id: 'identidade', label: 'Geral', icon: '👤' },
+  { id: 'combate', label: 'Combate', icon: '⚔️' },
+  { id: 'tracos', label: 'Traços', icon: '🃏' },
+  { id: 'inventario', label: 'Inventário', icon: '🎒' },
+  { id: 'divino', label: 'Divino', icon: '✦', conditional: true },
+]
 
 interface Props {
   character: Character;
@@ -40,6 +57,8 @@ export default function CompleteSheet({
   onBack,
   onOpenCatalog
 }: Props) {
+  const [activeTab, setActiveTab] = useState<TabId>('identidade')
+
   const handleInjuryUpdate = (categoria: keyof Lesoes, severidade: 'leves' | 'graves' | 'criticas', valor: number | LesaoDescricao[]) => {
     updateField('lesoes', {
       ...character.lesoes,
@@ -58,93 +77,134 @@ export default function CompleteSheet({
     updateNestedField('divino', field, value as any)
   }
 
-  // Toggle divine panel visibility when rank allows it
   const canHaveDivine = character.ranque !== 'Humano'
+
+  const visibleTabs = TABS.filter((t) => !t.conditional || canHaveDivine)
+
+  // If current tab becomes hidden (e.g. rank changed to Humano while on divino tab), fall back
+  if (!visibleTabs.some((t) => t.id === activeTab)) {
+    // Can't call setState during render, but this is safe as a guard — it'll fire once
+    queueMicrotask(() => setActiveTab('identidade'))
+  }
 
   return (
     <div className="min-h-screen bg-base">
-      <SectionNav showDivine={canHaveDivine && character.divino.ativo} onBack={onBack} />
+      {/* Top bar: back + tabs */}
+      <nav className="sticky top-0 z-40 bg-base/95 backdrop-blur-md border-b border-surface-light">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="flex items-center gap-2">
+            {onBack && (
+              <button
+                onClick={onBack}
+                className="shrink-0 px-3 py-1.5 rounded-lg text-parchment-dim text-sm hover:text-gold transition-colors cursor-pointer"
+                title="Voltar"
+              >
+                ←
+              </button>
+            )}
 
-      <div className="max-w-4xl mx-auto px-4 py-6">
-        <div id="secao-identidade">
-          <Header
-            character={character}
-            updateField={updateField}
-            updateRanque={updateRanque}
-            exportarFicha={exportarFicha}
-            importarFicha={importarFicha as any}
-            resetarFicha={resetarFicha}
-          />
+            {/* Tab strip — scrollable on mobile */}
+            <div className="flex-1 flex justify-center overflow-x-auto no-scrollbar">
+              {visibleTabs.map((tab) => {
+                const isActive = activeTab === tab.id
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`relative shrink-0 flex items-center gap-1.5 px-4 py-3 text-sm transition-all duration-200 cursor-pointer whitespace-nowrap ${
+                      isActive
+                        ? 'text-gold'
+                        : 'text-parchment-dim hover:text-parchment'
+                    }`}
+                  >
+                    <span className="text-xs">{tab.icon}</span>
+                    <span className="hidden sm:inline">{tab.label}</span>
+                    {/* Active indicator bar */}
+                    {isActive && (
+                      <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-gold rounded-full" />
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
         </div>
+      </nav>
 
-        <main className="space-y-6">
-          {/* Estresse + Rolador de Dados — compactos lado a lado */}
-          <section id="secao-estresse-dados">
-            <h2 className="sr-only">Estresse e Dados</h2>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Tab content */}
+      <div className="max-w-4xl mx-auto px-4 py-6">
+        <main>
+          {/* — Geral — */}
+          {activeTab === 'identidade' && (
+            <div className="space-y-6 animate-fadeIn">
+              <Header
+                character={character}
+                updateField={updateField}
+                updateRanque={updateRanque}
+                exportarFicha={exportarFicha}
+                importarFicha={importarFicha as any}
+                resetarFicha={resetarFicha}
+              />
+              <StoryPanel
+                character={character}
+                updateField={updateField}
+              />
+            </div>
+          )}
+
+          {/* — Combate — */}
+          {activeTab === 'combate' && (
+            <div className="space-y-6 animate-fadeIn">
               <StressBar
                 estresse={character.estresse}
                 maxEstresse={rankData.estresseMaximo}
                 onToggle={toggleEstresse}
                 onAdjust={adjustEstresse}
               />
-              <DiceRoller />
-            </div>
-          </section>
 
-          {/* Proficiências + Aspectos — lado a lado */}
-          <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div id="secao-proficiencias">
-              <ProficiencyList
-                proficiencias={character.proficiencias}
-                onUpdate={(val) => updateField("proficiencias", val)}
-              />
-            </div>
-            <div id="secao-aspectos">
-              <AspectList
-                aspectos={character.aspectos}
-                onUpdate={(val) => updateField("aspectos", val)}
-              />
-            </div>
-          </section>
-
-          {/* Lesões + Inventário — lado a lado */}
-          <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div id="secao-lesoes">
               <InjuryTracker
                 lesoes={character.lesoes}
                 rankData={rankData}
                 onUpdate={handleInjuryUpdate}
               />
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <ProficiencyList
+                  proficiencias={character.proficiencias}
+                  onUpdate={(val) => updateField("proficiencias", val)}
+                />
+                <AspectList
+                  aspectos={character.aspectos}
+                  onUpdate={(val) => updateField("aspectos", val)}
+                />
+              </div>
             </div>
-            <div id="secao-inventario">
+          )}
+
+          {/* — Traços — */}
+          {activeTab === 'tracos' && (
+            <div className="animate-fadeIn">
+              <TraitCard
+                tracos={character.tracos}
+                onUpdate={(val) => updateField('tracos', val)}
+                onOpenCatalog={onOpenCatalog}
+              />
+            </div>
+          )}
+
+          {/* — Inventário — */}
+          {activeTab === 'inventario' && (
+            <div className="animate-fadeIn">
               <InventoryList
                 equipamentos={character.equipamentos}
                 onUpdate={(val) => updateField("equipamentos", val)}
               />
             </div>
-          </section>
+          )}
 
-          <div id="secao-tracos">
-            <TraitCard
-              tracos={character.tracos}
-              onUpdate={(val) => updateField('tracos', val)}
-              onOpenCatalog={onOpenCatalog}
-            />
-          </div>
-
-          {/* Painel Divino — condicional */}
-          {canHaveDivine && (
-            <div id="secao-divino">
-              {!character.divino.ativo && (
-                <button
-                  id="btn-ativar-divino"
-                  onClick={() => updateNestedField('divino', 'ativo', true)}
-                  className="w-full py-3 text-sm bg-arcane/5 border border-arcane/20 text-arcane-dim rounded-xl hover:bg-arcane/10 hover:border-arcane/40 hover:text-arcane transition-all cursor-pointer"
-                >
-                  ✦ Ativar Painel Divino
-                </button>
-              )}
+          {/* — Divino (conditional) — */}
+          {activeTab === 'divino' && canHaveDivine && (
+            <div className="animate-fadeIn">
               <DivinePanel
                 divino={character.divino}
                 onUpdateDivino={handleUpdateDivino}
@@ -153,13 +213,7 @@ export default function CompleteSheet({
             </div>
           )}
 
-          {/* História & Notas */}
-          <div id="secao-historia">
-            <StoryPanel
-              character={character}
-              updateField={updateField}
-            />
-          </div>
+
         </main>
 
         {/* Footer */}
@@ -170,6 +224,9 @@ export default function CompleteSheet({
           </p>
         </footer>
       </div>
+
+      {/* Floating Dice Roller */}
+      <FloatingDiceRoller />
     </div>
   )
 }
