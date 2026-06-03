@@ -42,15 +42,6 @@ export default function Header({
       {/* Decorative top line */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-px bg-gradient-to-r from-transparent via-gold to-transparent" />
 
-      <div className="text-center pt-8 pb-4">
-        <h1 className="text-4xl md:text-5xl font-title text-gold tracking-widest drop-shadow-lg">
-          Ficha de Personagem
-        </h1>
-        <p className="text-parchment-dim mt-1 font-body text-sm tracking-wide">
-          Sistema Narrativo 2d10
-        </p>
-      </div>
-
       {/* Identity bar */}
       <div className="bg-surface rounded-xl border border-surface-light p-4 md:p-6 mt-4">
         <SectionHeader
