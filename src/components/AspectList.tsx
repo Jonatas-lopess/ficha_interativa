@@ -3,9 +3,19 @@ import SectionHeader from "./SectionHeader";
 
 // Diamond/gem icon — evokes identity facets
 const AspectIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-    <path d="M2.7 10.3a2.41 2.41 0 0 0 0 3.41l7.59 7.59a2.41 2.41 0 0 0 3.41 0l7.59-7.59a2.41 2.41 0 0 0 0-3.41L13.7 2.71a2.41 2.41 0 0 0-3.41 0Z"/>
-    <path d="m8 12 2 2 4-4"/>
+  <svg
+    width="28"
+    height="28"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <path d="M2.7 10.3a2.41 2.41 0 0 0 0 3.41l7.59 7.59a2.41 2.41 0 0 0 3.41 0l7.59-7.59a2.41 2.41 0 0 0 0-3.41L13.7 2.71a2.41 2.41 0 0 0-3.41 0Z" />
+    <path d="m8 12 2 2 4-4" />
   </svg>
 );
 
@@ -75,7 +85,7 @@ export default function AspectList({ aspectos, onUpdate }: Props) {
           {aspectos.map((aspecto, i) => (
             <span
               key={i}
-              className="group flex items-center gap-1.5 px-3 py-1.5 bg-arcane/5 border border-arcane/25 rounded-full text-sm text-arcane-dim hover:border-arcane/50 hover:text-arcane transition-all"
+              className="group flex items-center gap-1.5 px-3 py-1.5 bg-arcane/5 border border-arcane/25 rounded-full text-sm text-arcane hover:border-arcane/50 transition-all"
             >
               <span className="text-arcane/50 text-xs">✦</span>
               {aspecto}

@@ -77,7 +77,7 @@ export default function InventoryList({ equipamentos, onUpdate }: Props) {
                 value={item.descricao}
                 onChange={(e) => handleUpdateItem(i, 'descricao', e.target.value)}
                 placeholder="Descrição do item..."
-                className="w-full bg-transparent text-xs text-parchment-dim outline-none resize-none min-h-[40px] focus:min-h-[80px] transition-all"
+                className="w-full bg-transparent text-xs text-parchment-dim outline-none resize-y min-h-[2.5rem] max-h-[10rem] overflow-y-auto transition-all"
               />
             </li>
           ))}

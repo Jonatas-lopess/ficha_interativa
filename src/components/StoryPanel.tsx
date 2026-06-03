@@ -1,60 +1,111 @@
-import { useState } from 'react'
-import SectionHeader from './SectionHeader'
-import { BookOpenIcon } from './Icons'
-import { Character } from '../types'
+import { useState } from "react";
+import SectionHeader from "./SectionHeader";
+import { BookOpenIcon } from "./Icons";
+import { Character } from "../types";
 
 interface Props {
   character: Character;
-  updateField: <K extends keyof Character>(field: K, value: Character[K]) => void;
+  updateField: <K extends keyof Character>(
+    field: K,
+    value: Character[K],
+  ) => void;
 }
 
 export default function StoryPanel({ character, updateField }: Props) {
-  const [frase, setFrase] = useState('')
-  const [objetivo, setObjetivo] = useState('')
+  const [frase, setFrase] = useState("");
+  const [objetivo, setObjetivo] = useState("");
 
   const addFrase = () => {
-    if (!frase.trim()) return
-    updateField('frasesExperiencia', [...character.frasesExperiencia, frase.trim()])
-    setFrase('')
-  }
+    if (!frase.trim()) return;
+    updateField("frasesExperiencia", [
+      ...character.frasesExperiencia,
+      frase.trim(),
+    ]);
+    setFrase("");
+  };
 
   const removeFrase = (i: number) => {
-    updateField('frasesExperiencia', character.frasesExperiencia.filter((_, idx) => idx !== i))
-  }
+    updateField(
+      "frasesExperiencia",
+      character.frasesExperiencia.filter((_, idx) => idx !== i),
+    );
+  };
 
   const addObjetivo = () => {
-    if (!objetivo.trim()) return
-    updateField('objetivos', [...character.objetivos, objetivo.trim()])
-    setObjetivo('')
-  }
+    if (!objetivo.trim()) return;
+    updateField("objetivos", [...character.objetivos, objetivo.trim()]);
+    setObjetivo("");
+  };
 
   const removeObjetivo = (i: number) => {
-    updateField('objetivos', character.objetivos.filter((_, idx) => idx !== i))
-  }
+    updateField(
+      "objetivos",
+      character.objetivos.filter((_, idx) => idx !== i),
+    );
+  };
 
   return (
     <section className="bg-surface rounded-xl border border-surface-light p-4 md:p-6 space-y-6">
-      <SectionHeader title="História e Notas" subtitle="O passado, objetivos e aprendizados" icon={<BookOpenIcon />} />
+      <SectionHeader
+        title="História e Notas"
+        subtitle="O passado, objetivos e aprendizados"
+        icon={<BookOpenIcon />}
+      />
 
       {/* Backstory */}
       <div>
-        <label htmlFor="char-historia" className="block text-xs text-parchment-dim mb-1 uppercase tracking-wider">Backstory</label>
-        <textarea id="char-historia" value={character.historia} onChange={(e) => updateField('historia', e.target.value)} placeholder="A história do personagem..." rows={4} className="w-full bg-base border border-surface-light rounded-lg px-3 py-2 text-sm text-parchment placeholder-parchment-dim/40 focus:border-gold outline-none transition-all resize-none" />
+        <label
+          htmlFor="char-historia"
+          className="block text-xs text-parchment-dim mb-1 uppercase tracking-wider"
+        >
+          Backstory
+        </label>
+        <textarea
+          id="char-historia"
+          value={character.historia}
+          onChange={(e) => updateField("historia", e.target.value)}
+          placeholder="A história do personagem..."
+          rows={4}
+          className="w-full bg-base border border-surface-light rounded-lg px-3 py-2 text-sm text-parchment placeholder-parchment-dim/40 focus:border-gold outline-none transition-all resize-y min-h-[6rem]"
+        />
       </div>
 
       {/* Frases de Experiência */}
       <div>
-        <label className="block text-xs text-parchment-dim mb-1 uppercase tracking-wider">Frases de Experiência</label>
+        <label className="block text-xs text-parchment-dim mb-1 uppercase tracking-wider">
+          Frases de Experiência
+        </label>
         <div className="flex gap-2 mb-2">
-          <input type="text" value={frase} onChange={(e) => setFrase(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addFrase()} placeholder="Ex: 'Sobrevivi à Queda de Aresh'" className="flex-1 bg-base border border-surface-light rounded-lg px-3 py-2 text-sm text-parchment placeholder-parchment-dim/40 focus:border-gold outline-none transition-all" />
-          <button onClick={addFrase} disabled={!frase.trim()} className="px-3 py-2 text-sm bg-gold/10 border border-gold-dim text-gold rounded-lg hover:bg-gold/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer">+</button>
+          <input
+            type="text"
+            value={frase}
+            onChange={(e) => setFrase(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && addFrase()}
+            placeholder="Ex: 'Sobrevivi à Queda de Aresh'"
+            className="flex-1 bg-base border border-surface-light rounded-lg px-3 py-2 text-sm text-parchment placeholder-parchment-dim/40 focus:border-gold outline-none transition-all"
+          />
+          <button
+            onClick={addFrase}
+            disabled={!frase.trim()}
+            className="px-3 py-2 text-sm bg-gold/10 border border-gold-dim text-gold rounded-lg hover:bg-gold/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+          >
+            +
+          </button>
         </div>
         {character.frasesExperiencia.length > 0 && (
           <ul className="space-y-1">
             {character.frasesExperiencia.map((f, i) => (
-              <li key={i} className="group flex items-center justify-between bg-base/50 rounded-lg px-3 py-1.5 border border-surface-light/50">
+              <li
+                key={i}
+                className="group flex items-center justify-between bg-base/50 rounded-lg px-3 py-1.5 border border-surface-light/50"
+              >
                 <span className="text-sm text-parchment italic">"{f}"</span>
-                <button onClick={() => removeFrase(i)} className="text-parchment-dim/30 hover:text-injury-critical text-xs opacity-0 group-hover:opacity-100 transition-all cursor-pointer">✕</button>
+                <button
+                  onClick={() => removeFrase(i)}
+                  className="text-parchment-dim/30 hover:text-injury-critical text-xs opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
+                >
+                  ✕
+                </button>
               </li>
             ))}
           </ul>
@@ -63,17 +114,40 @@ export default function StoryPanel({ character, updateField }: Props) {
 
       {/* Objetivos */}
       <div>
-        <label className="block text-xs text-parchment-dim mb-1 uppercase tracking-wider">Objetivos</label>
+        <label className="block text-xs text-parchment-dim mb-1 uppercase tracking-wider">
+          Objetivos
+        </label>
         <div className="flex gap-2 mb-2">
-          <input type="text" value={objetivo} onChange={(e) => setObjetivo(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addObjetivo()} placeholder="Ex: Encontrar o Oráculo" className="flex-1 bg-base border border-surface-light rounded-lg px-3 py-2 text-sm text-parchment placeholder-parchment-dim/40 focus:border-gold outline-none transition-all" />
-          <button onClick={addObjetivo} disabled={!objetivo.trim()} className="px-3 py-2 text-sm bg-gold/10 border border-gold-dim text-gold rounded-lg hover:bg-gold/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer">+</button>
+          <input
+            type="text"
+            value={objetivo}
+            onChange={(e) => setObjetivo(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && addObjetivo()}
+            placeholder="Ex: Encontrar o Oráculo"
+            className="flex-1 bg-base border border-surface-light rounded-lg px-3 py-2 text-sm text-parchment placeholder-parchment-dim/40 focus:border-gold outline-none transition-all"
+          />
+          <button
+            onClick={addObjetivo}
+            disabled={!objetivo.trim()}
+            className="px-3 py-2 text-sm bg-gold/10 border border-gold-dim text-gold rounded-lg hover:bg-gold/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+          >
+            +
+          </button>
         </div>
         {character.objetivos.length > 0 && (
           <ul className="space-y-1">
             {character.objetivos.map((o, i) => (
-              <li key={i} className="group flex items-center justify-between bg-base/50 rounded-lg px-3 py-1.5 border border-surface-light/50">
+              <li
+                key={i}
+                className="group flex items-center justify-between bg-base/50 rounded-lg px-3 py-1.5 border border-surface-light/50"
+              >
                 <span className="text-sm text-parchment">→ {o}</span>
-                <button onClick={() => removeObjetivo(i)} className="text-parchment-dim/30 hover:text-injury-critical text-xs opacity-0 group-hover:opacity-100 transition-all cursor-pointer">✕</button>
+                <button
+                  onClick={() => removeObjetivo(i)}
+                  className="text-parchment-dim/30 hover:text-injury-critical text-xs opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
+                >
+                  ✕
+                </button>
               </li>
             ))}
           </ul>
@@ -82,9 +156,21 @@ export default function StoryPanel({ character, updateField }: Props) {
 
       {/* Notas Livres */}
       <div>
-        <label htmlFor="char-notas" className="block text-xs text-parchment-dim mb-1 uppercase tracking-wider">Notas Livres</label>
-        <textarea id="char-notas" value={character.notas} onChange={(e) => updateField('notas', e.target.value)} placeholder="Anotações gerais..." rows={3} className="w-full bg-base border border-surface-light rounded-lg px-3 py-2 text-sm text-parchment placeholder-parchment-dim/40 focus:border-gold outline-none transition-all resize-none" />
+        <label
+          htmlFor="char-notas"
+          className="block text-xs text-parchment-dim mb-1 uppercase tracking-wider"
+        >
+          Notas Livres
+        </label>
+        <textarea
+          id="char-notas"
+          value={character.notas}
+          onChange={(e) => updateField("notas", e.target.value)}
+          placeholder="Anotações gerais..."
+          rows={3}
+          className="w-full bg-base border border-surface-light rounded-lg px-3 py-2 text-sm text-parchment placeholder-parchment-dim/40 focus:border-gold outline-none transition-all resize-y min-h-[4.5rem]"
+        />
       </div>
     </section>
-  )
+  );
 }
