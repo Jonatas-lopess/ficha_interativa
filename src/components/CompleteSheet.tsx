@@ -154,21 +154,20 @@ export default function CompleteSheet({
 
           {/* — Combate — */}
           {activeTab === 'combate' && (
-            <div className="space-y-6 animate-fadeIn">
-              <StressBar
-                estresse={character.estresse}
-                maxEstresse={rankData.estresseMaximo}
-                onToggle={toggleEstresse}
-                onAdjust={adjustEstresse}
-              />
-
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fadeIn">
               <InjuryTracker
                 lesoes={character.lesoes}
                 rankData={rankData}
                 onUpdate={handleInjuryUpdate}
               />
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="space-y-6">
+                <StressBar
+                  estresse={character.estresse}
+                  maxEstresse={rankData.estresseMaximo}
+                  onToggle={toggleEstresse}
+                  onAdjust={adjustEstresse}
+                />
                 <ProficiencyList
                   proficiencias={character.proficiencias}
                   onUpdate={(val) => updateField("proficiencias", val)}

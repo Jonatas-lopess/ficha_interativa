@@ -66,7 +66,7 @@ export default function StoryPanel({ character, updateField }: Props) {
           onChange={(e) => updateField("historia", e.target.value)}
           placeholder="A história do personagem..."
           rows={4}
-          className="w-full bg-base border border-surface-light rounded-lg px-3 py-2 text-sm text-parchment placeholder-parchment-dim/40 focus:border-gold outline-none transition-all resize-y min-h-[6rem]"
+          className="w-full bg-base border border-surface-light rounded-lg px-3 py-2 text-sm text-parchment placeholder-parchment-dim/40 focus:border-gold outline-none transition-all resize-y min-h-[16rem]"
         />
       </div>
 
