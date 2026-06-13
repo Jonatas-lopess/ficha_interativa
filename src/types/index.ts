@@ -56,6 +56,7 @@ export interface Divino {
   integracao: IntegracaoEstagio;
   persona: string;
   ancoras: Ancora[];
+  habilidadesNucleo?: string[];
 }
 
 export interface Equipamento {

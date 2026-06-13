@@ -35,6 +35,7 @@ export const createDefaultCharacter = (): Character => ({
     integracao: 'Adaptação',
     persona: '',
     ancoras: [],
+    habilidadesNucleo: [],
   },
 
   // Equipamentos

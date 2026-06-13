@@ -206,6 +206,7 @@ export default function CompleteSheet({
             <div className="animate-fadeIn">
               <DivinePanel
                 divino={character.divino}
+                ranque={character.ranque}
                 onUpdateDivino={handleUpdateDivino}
                 onUpdateAnchors={handleUpdateAnchors}
               />
