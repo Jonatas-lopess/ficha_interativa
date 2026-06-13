@@ -1,20 +1,26 @@
-import { LocalStorageDriver } from './drivers/localStorageDriver';
+import { RxDbDriver } from './drivers/rxdbDriver';
 import { CharacterRepository }    from './CharacterRepository';
 import { ThreatRepository }       from './ThreatRepository';
 import { TraitCatalogRepository } from './TraitCatalogRepository';
+import { getDatabase } from '../db';
+import { migrateFromLocalStorageDriver } from '../db/migration';
 import threatsJson from '../data/threats.json';
 import { Threat }  from '../types';
 
-// Single driver instance — swap to RxDbDriver (src/repository/drivers/rxdbDriver.ts)
-// when you're ready to move to RxDB + Supabase.
-const driver = new LocalStorageDriver('rpg-db');
+const characterDriver = new RxDbDriver('characters');
+const threatDriver    = new RxDbDriver('threats');
+const traitDriver     = new RxDbDriver('traits');
 
-export const characterRepo    = new CharacterRepository   (driver);
-export const threatRepo       = new ThreatRepository      (driver);
-export const traitCatalogRepo = new TraitCatalogRepository(driver);
+export const characterRepo    = new CharacterRepository   (characterDriver);
+export const threatRepo       = new ThreatRepository      (threatDriver);
+export const traitCatalogRepo = new TraitCatalogRepository(traitDriver);
 
 export async function initializeDatabase() {
   try {
+    await getDatabase();
+
+    await migrateFromLocalStorageDriver(characterRepo, threatRepo, traitCatalogRepo);
+
     const existingThreats = await threatRepo.findAll();
     if (existingThreats.length === 0 && threatsJson.length > 0) {
       console.log('[db] Seeding threats…');

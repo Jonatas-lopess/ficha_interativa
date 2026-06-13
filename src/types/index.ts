@@ -18,6 +18,7 @@ export interface Efeito {
 }
 
 export interface Traco {
+  id?: string;
   nome: string;
   conceito: string;
   gatilho: string;
@@ -65,6 +66,7 @@ export interface Equipamento {
 }
 
 export interface Character {
+  id?: string;
   nome: string;
   idade: string;
   alinhamento: string;
@@ -97,6 +99,7 @@ export interface SheetRegistryEntry {
 
 // --- Modelos do Códice (Ameaças e Traços Divinos) ---
 export interface Threat {
+  id?: string;
   nome: string;
   descricao: string;
   ranque: RanqueNome;

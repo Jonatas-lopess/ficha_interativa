@@ -30,17 +30,22 @@ export async function migrateFromLocalStorageDriver(
     try { doc = JSON.parse(raw); } catch { continue; }
     if (doc._deleted) continue;
 
-    const id = key.substring(OLD_PREFIX.length); // e.g. "character_1abc"
+    const id = key.substring(OLD_PREFIX.length);
+
+    // Strip PouchDB fields before persisting to RxDB
+    delete doc._id;
+    delete doc._rev;
+    delete doc._deleted;
 
     try {
       if (id.startsWith('character_')) {
-        await characterRepo.save({ ...doc, _id: id });
+        await characterRepo.save({ ...doc, id });
         migrated++;
       } else if (id.startsWith('threat_')) {
-        await threatRepo.save({ ...doc, _id: id });
+        await threatRepo.save({ ...doc, id });
         migrated++;
       } else if (id.startsWith('trait_')) {
-        await traitRepo.save({ ...doc, _id: id });
+        await traitRepo.save({ ...doc, id });
         migrated++;
       }
     } catch (err) {

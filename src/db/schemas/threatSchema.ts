@@ -7,7 +7,6 @@ export const threatSchema: RxJsonSchema<Record<string, unknown>> = {
   type: 'object',
   properties: {
     id:            { type: 'string', maxLength: 200 },
-    rxRev:         { type: 'string' },
     nome:          { type: 'string' },
     descricao:     { type: 'string' },
     ranque:        { type: 'string' },
