@@ -58,7 +58,7 @@
           {
             "name": "Força Destrutiva",
             "description": "Sua fisiologia foi alterada pelo fragmento divino, concedendo uma força que desafia as limitações humanas.",
-            "type": "Traço Passivo"
+            "type": "Aspecto"
           },
           {
             "name": "Galvanização",
@@ -86,6 +86,11 @@
     "ranks": {
       "Desperto": {
         "Centelha": [
+          {
+            "name": "Alta Espiritualidade",
+            "description": "A espiritualidade intensa é inerente a você, alimentando sua conexão com o transcendental. Essa afinidade concede a eles a capacidade de dominar a Magia Ritualística.",
+            "type": "Aspecto"
+          },
           {
             "name": "Corpo de Cadáver",
             "description": "Sua fisiologia foi alterada pelo Fragmento da Morte. Você é biologicamente limítrofe entre vivos e mortos.",

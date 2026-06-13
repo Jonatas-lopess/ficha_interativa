@@ -52,22 +52,6 @@
     "origem": "Base"
   },
   {
-    "nome": "Força Destrutiva",
-    "conceito": "Sua fisiologia foi alterada pelo fragmento divino, concedendo uma força que desafia as limitações humanas.",
-    "gatilho": "Feitos de força bruta ou resistência física.",
-    "efeitos": [
-      {
-        "tipo": "Passivo",
-        "descricao": "Seu Efeito será no mínimo **Limitado**, dificultando mas nunca impedindo seu progresso."
-      }
-    ],
-    "limiteCusto": "O mestre pode definir um custo em Estresse (até 3) a depender da Posição e da dificuldade do feito.",
-    "origem": "Divino",
-    "caminho": "Destruição",
-    "ranqueRequisito": "Desperto",
-    "saturacaoRequisito": "Completo"
-  },
-  {
     "nome": "Observação Superior",
     "conceito": "Você possui uma observação aguçada, sendo capaz de identificar padrões de movimento, antecipar ações dos oponentes e encontrar pontos fracos em suas defesas.",
     "gatilho": "Quando for alvo de um ataque físico.",
@@ -371,22 +355,6 @@
     "caminho": "Morte",
     "ranqueRequisito": "Desperto",
     "saturacaoRequisito": "Completo"
-  },
-  {
-    "nome": "Necromancia",
-    "conceito": "Você domina a animação de cadáveres, criando servos de matéria viva.",
-    "gatilho": "Ao realizar o ritual sobre cadáveres ou ao se aproximar deles.",
-    "efeitos": [
-      {
-        "tipo": "Ativável",
-        "descricao": "Faça um teste para tentar animar os cadáveres ao redor.\n- Se bem-sucedido, eles se tornam seus servos, atacando qualquer um que considere inimigo. Caso contrário, os servos são instáveis e colapsam após um curto tempo ou se receberem qualquer Lesão."
-      }
-    ],
-    "limiteCusto": "2 Estresse.",
-    "origem": "Divino",
-    "caminho": "Morte",
-    "ranqueRequisito": "Desperto",
-    "saturacaoRequisito": "Consolidado"
   },
   {
     "nome": "Aura de Decomposição",
