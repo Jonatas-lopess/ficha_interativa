@@ -2,7 +2,7 @@ import type { RxJsonSchema } from 'rxdb';
 
 export const threatSchema: RxJsonSchema<Record<string, unknown>> = {
   title: 'threat schema',
-  version: 0,
+  version: 1,
   primaryKey: 'id',
   type: 'object',
   properties: {
@@ -18,6 +18,8 @@ export const threatSchema: RxJsonSchema<Record<string, unknown>> = {
     taticas:       { type: 'array', items: { type: 'string' } },
     criadoEm:      { type: 'string' },
     atualizadoEm:  { type: 'string' },
+    _modified:     { type: 'string', maxLength: 100 },
   },
   required: ['id', 'nome'],
+  indexes: ['_modified'],
 };

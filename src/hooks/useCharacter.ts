@@ -3,6 +3,7 @@ import { createDefaultCharacter } from '../data/defaultCharacter'
 import { RANQUES } from '../data/rankData'
 import { Character, RanqueNome, EstresseEstado, Equipamento, RankData } from '../types'
 import { Persisted } from '../repository/persistenceTypes'
+import { useOnlineSave, OnlineSaveStatus } from './useOnlineSave'
 import { characterRepo } from '../repository'
 
 interface UseCharacterResult {
@@ -17,12 +18,19 @@ interface UseCharacterResult {
   importarFicha: (jsonString: string) => { success: boolean; error?: string }
   resetarFicha: () => void
   loading: boolean
+  salvarOnline: () => void
+  onlineSaveStatus: OnlineSaveStatus
 }
 
 export function useCharacter(sheetId: string | null, onSyncRegistry?: (id: string, nome: string) => void): UseCharacterResult {
   const defaultChar = (): Persisted<Character> => ({ ...createDefaultCharacter(), id: sheetId ?? '' })
   const [character, setCharacter] = useState<Persisted<Character>>(defaultChar)
   const [loading, setLoading] = useState<boolean>(true)
+  const { salvarOnline, status: onlineSaveStatus } = useOnlineSave()
+
+  const handleSalvarOnline = useCallback(() => {
+    salvarOnline(character)
+  }, [salvarOnline, character])
 
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -225,5 +233,7 @@ export function useCharacter(sheetId: string | null, onSyncRegistry?: (id: strin
     importarFicha,
     resetarFicha,
     loading,
+    salvarOnline: handleSalvarOnline,
+    onlineSaveStatus,
   }
 }

@@ -4,6 +4,7 @@ import { ThreatRepository } from "./ThreatRepository";
 import { TraitCatalogRepository } from "./TraitCatalogRepository";
 import { getDatabase } from "../db";
 import { migrateFromLocalStorageDriver } from "../db/migration";
+import { startCatalogReplication } from "../db/replication/catalogReplication";
 import threatsJson from "../data/threats.json";
 import tracosCatalogJson from "../data/tracosCatalog.json";
 import { Threat } from "../types";
@@ -18,7 +19,7 @@ export const traitCatalogRepo = new TraitCatalogRepository(traitDriver);
 
 export async function initializeDatabase() {
   try {
-    await getDatabase();
+    const db = await getDatabase();
 
     await migrateFromLocalStorageDriver(
       characterRepo,
@@ -39,6 +40,9 @@ export async function initializeDatabase() {
       console.log("[db] Seeding traits…");
       await traitCatalogRepo.seed(tracosCatalogJson as any[]);
     }
+
+    // Inicia replicação em segundo plano com o Supabase
+    await startCatalogReplication(db);
   } catch (err) {
     console.error("[db] initializeDatabase failed:", err);
     throw err;

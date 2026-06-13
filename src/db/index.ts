@@ -1,8 +1,12 @@
 import { createRxDatabase, addRxPlugin } from 'rxdb';
 import { getRxStorageLocalstorage } from 'rxdb/plugins/storage-localstorage';
+import { RxDBMigrationSchemaPlugin } from 'rxdb/plugins/migration-schema';
 import { characterSchema } from './schemas/characterSchema';
 import { threatSchema }    from './schemas/threatSchema';
 import { traitSchema }     from './schemas/traitSchema';
+
+// Register migration schema plugin
+addRxPlugin(RxDBMigrationSchemaPlugin);
 
 export type AppDatabase = Awaited<ReturnType<typeof _createDb>>;
 
@@ -22,10 +26,26 @@ async function _createDb() {
     multiInstance: false,       // single tab — no broadcast channel overhead
   });
 
+  const migrationStrategies = {
+    1: (oldDoc: any) => ({
+      ...oldDoc,
+      _modified: oldDoc._modified || new Date().toISOString()
+    })
+  };
+
   await db.addCollections({
-    characters: { schema: characterSchema },
-    threats:    { schema: threatSchema    },
-    traits:     { schema: traitSchema     },
+    characters: { 
+      schema: characterSchema,
+      migrationStrategies
+    },
+    threats: { 
+      schema: threatSchema,
+      migrationStrategies
+    },
+    traits: { 
+      schema: traitSchema,
+      migrationStrategies
+    },
   });
 
   return db;

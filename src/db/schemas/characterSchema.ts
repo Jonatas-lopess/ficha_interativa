@@ -8,7 +8,7 @@ import type { RxJsonSchema } from 'rxdb';
  */
 export const characterSchema: RxJsonSchema<Record<string, unknown>> = {
   title: 'character schema',
-  version: 0,
+  version: 1,
   primaryKey: 'id',
   type: 'object',
   properties: {
@@ -33,7 +33,8 @@ export const characterSchema: RxJsonSchema<Record<string, unknown>> = {
     taticas:            { type: 'string' },
     criadoEm:           { type: 'string' },
     atualizadoEm:       { type: 'string' },
+    _modified:          { type: 'string', maxLength: 100 },
   },
   required: ['id', 'nome', 'ranque'],
-  indexes: ['atualizadoEm'],
+  indexes: ['atualizadoEm', '_modified'],
 };

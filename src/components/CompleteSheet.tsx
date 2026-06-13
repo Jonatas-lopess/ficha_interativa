@@ -39,6 +39,8 @@ interface Props {
   exportarFicha: () => void;
   importarFicha: (jsonString: string) => { success: boolean; error?: string };
   resetarFicha: () => void;
+  salvarOnline: () => void;
+  onlineSaveStatus: 'idle' | 'saving' | 'success' | 'error';
   onBack?: () => void;
   onOpenCatalog?: () => void;
 }
@@ -54,6 +56,8 @@ export default function CompleteSheet({
   exportarFicha,
   importarFicha,
   resetarFicha,
+  salvarOnline,
+  onlineSaveStatus,
   onBack,
   onOpenCatalog
 }: Props) {
@@ -144,6 +148,8 @@ export default function CompleteSheet({
                 exportarFicha={exportarFicha}
                 importarFicha={importarFicha as any}
                 resetarFicha={resetarFicha}
+                salvarOnline={salvarOnline}
+                onlineSaveStatus={onlineSaveStatus}
               />
               <StoryPanel
                 character={character}
