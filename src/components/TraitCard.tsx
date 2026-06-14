@@ -4,6 +4,7 @@ import SectionHeader from "./SectionHeader";
 import { SparklesIcon } from "./Icons";
 import { Traco, TipoEfeito, OrigemTraco, Efeito } from "../types";
 import { MarkdownText } from "./MarkdownText";
+import { useSheetStore } from "../store/sheetStore";
 
 const EFEITO_BADGES: Record<TipoEfeito, string> = {
   Passivo: "bg-gold/10 text-gold-dim",
@@ -28,8 +29,6 @@ const EMPTY_FORM: Omit<Traco, "efeitos"> = {
 };
 
 interface Props {
-  tracos: Traco[];
-  onUpdate: (tracos: Traco[]) => void;
   title?: string;
   subtitle?: string;
   icon?: React.ReactNode;
@@ -38,14 +37,17 @@ interface Props {
 }
 
 const TraitCard = memo(function TraitCard({
-  tracos,
-  onUpdate,
   title = "Traços",
   subtitle = "Características marcantes e mecânicas passivas",
   icon = <SparklesIcon />,
   color = "text-gold",
   onOpenCatalog,
 }: Props) {
+  const tracos = useSheetStore((s) => s.character?.tracos ?? []);
+  const updateField = useSheetStore((s) => s.updateField);
+
+  const onUpdate = (next: Traco[]) => updateField("tracos", next);
+
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState<Traco>({

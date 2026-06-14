@@ -9,9 +9,7 @@ import SectionHeader from "./SectionHeader";
 import { SunIcon } from "./Icons";
 import {
   Divino,
-  Ancora,
   SaturacaoEstagio,
-  IntegracaoEstagio,
   RanqueNome,
   Traco,
   TipoEfeito,
@@ -19,6 +17,7 @@ import {
   DivineSkill,
 } from "../types";
 import { traitCatalogRepo, skillRepo } from "../repository";
+import { useSheetStore, useShallow } from "../store/sheetStore";
 
 const STAGE_ORDER: SaturacaoEstagio[] = [
   "Centelha",
@@ -42,31 +41,16 @@ function getEffectTypes(traco: Traco): TipoEfeito[] {
   return Array.from(new Set(tipos));
 }
 
-interface Props {
-  divino: Divino;
-  ranque: RanqueNome;
-  onUpdateDivino: <K extends keyof Divino>(field: K, value: Divino[K]) => void;
-  onUpdateAnchors: (ancoras: Ancora[]) => void;
-  tracos: Traco[];
-  onUpdateTraits: (tracos: Traco[]) => void;
-  aspectos: string[];
-  onUpdateAspects: (aspectos: string[]) => void;
-  proficiencias: string[];
-  onUpdateProficiencies: (proficiencias: string[]) => void;
-}
+const DivinePanel = memo(function DivinePanel() {
+  const { divino, ranque } = useSheetStore(
+    useShallow((s) => ({
+      divino: s.character?.divino,
+      ranque: s.character?.ranque as RanqueNome | undefined,
+    })),
+  );
+  const updateNestedField = useSheetStore((s) => s.updateNestedField);
+  const syncDivineAbilities = useSheetStore((s) => s.syncDivineAbilities);
 
-const DivinePanel = memo(function DivinePanel({
-  divino,
-  ranque,
-  onUpdateDivino,
-  onUpdateAnchors,
-  tracos,
-  onUpdateTraits,
-  aspectos,
-  onUpdateAspects,
-  proficiencias,
-  onUpdateProficiencies,
-}: Props) {
   const [dbTraits, setDbTraits] = useState<DivineTrait[]>([]);
   const [dbSkills, setDbSkills] = useState<DivineSkill[]>([]);
   const [loadingTraits, setLoadingTraits] = useState(true);
@@ -75,6 +59,8 @@ const DivinePanel = memo(function DivinePanel({
   const [expandedStage, setExpandedStage] = useState<SaturacaoEstagio | null>(
     null,
   );
+  // Blur-save local state for persona
+  const [localPersona, setLocalPersona] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -102,159 +88,19 @@ const DivinePanel = memo(function DivinePanel({
     };
   }, []);
 
-  // Keep character traits, aspects, and proficiencies in sync with unlocked/Centelha skills/traits
+  // Single atomic sync — replaces the 3-callback cascade
   useEffect(() => {
-    if (loading || ranque === "Humano") return;
+    if (loading || !divino || !ranque || ranque === "Humano") return;
+    syncDivineAbilities(dbTraits, dbSkills);
+  }, [dbTraits, dbSkills, divino?.caminho, divino?.habilidadesNucleo, ranque, loading]);
 
-    const activePathway = divino.caminho;
-    const activeRank = ranque;
-
-    // 1. Sync traits
-    const expectedDirectTraits = dbTraits.filter((t) => {
-      if (t.caminho !== activePathway || t.ranqueRequisito !== activeRank) {
-        return false;
-      }
-      return (
-        t.saturacaoRequisito === "Centelha" ||
-        (divino.habilidadesNucleo || []).includes(t.nome)
-      );
-    });
-
-    const expectedSkillTraits: DivineTrait[] = [];
-    dbSkills.forEach((s) => {
-      if (
-        s.tipo === "traco" &&
-        s.caminho === activePathway &&
-        s.ranqueRequisito === activeRank
-      ) {
-        const isActive =
-          s.saturacaoRequisito === "Centelha" ||
-          (divino.habilidadesNucleo || []).includes(s.nome);
-        if (isActive) {
-          const correspondingTrait = dbTraits.find((t) => t.nome === s.nome);
-          if (correspondingTrait) {
-            expectedSkillTraits.push({
-              ...correspondingTrait,
-              origem: "Divino",
-              caminho: s.caminho || undefined,
-              ranqueRequisito: s.ranqueRequisito || undefined,
-              saturacaoRequisito: s.saturacaoRequisito || undefined,
-            });
-          }
-        }
-      }
-    });
-
-    const expectedDivineTraits = [...expectedDirectTraits];
-    expectedSkillTraits.forEach((est) => {
-      if (!expectedDivineTraits.some((t) => t.nome === est.nome)) {
-        expectedDivineTraits.push(est);
-      }
-    });
-
-    const currentDivineTraits = tracos.filter((t) => t.origem === "Divino");
-
-    const missingTraits = expectedDivineTraits.filter(
-      (et) => !tracos.some((t) => t.nome === et.nome),
-    );
-
-    const outdatedTraits = currentDivineTraits.filter(
-      (ct) => !expectedDivineTraits.some((et) => et.nome === ct.nome),
-    );
-
-    if (missingTraits.length > 0 || outdatedTraits.length > 0) {
-      const nextTraits = [
-        ...tracos.filter(
-          (t) =>
-            t.origem !== "Divino" ||
-            expectedDivineTraits.some((et) => et.nome === t.nome),
-        ),
-        ...missingTraits,
-      ];
-      onUpdateTraits(nextTraits);
-    }
-
-    // 2. Sync aspects
-    const dbAspects = dbSkills.filter((s) => s.tipo === "aspecto");
-    const dbAspectNames = dbAspects.map((s) => s.nome);
-    const expectedAspects = dbAspects.filter(
-      (s) =>
-        s.caminho === activePathway &&
-        s.ranqueRequisito === activeRank &&
-        (s.saturacaoRequisito === "Centelha" ||
-          (divino.habilidadesNucleo || []).includes(s.nome)),
-    );
-    const expectedAspectNames = expectedAspects.map((s) => s.nome);
-
-    const missingAspects = expectedAspectNames.filter(
-      (name) => !aspectos.includes(name),
-    );
-    const outdatedAspects = aspectos.filter(
-      (name) =>
-        dbAspectNames.includes(name) && !expectedAspectNames.includes(name),
-    );
-
-    if (missingAspects.length > 0 || outdatedAspects.length > 0) {
-      const nextAspects = [
-        ...aspectos.filter(
-          (name) =>
-            !dbAspectNames.includes(name) || expectedAspectNames.includes(name),
-        ),
-        ...missingAspects,
-      ];
-      onUpdateAspects(nextAspects);
-    }
-
-    // 3. Sync proficiencies
-    const dbProficiencies = dbSkills.filter((s) => s.tipo === "proficiencia");
-    const dbProficiencyNames = dbProficiencies.map((s) => s.nome);
-    const expectedProficiencies = dbProficiencies.filter(
-      (s) =>
-        s.caminho === activePathway &&
-        s.ranqueRequisito === activeRank &&
-        (s.saturacaoRequisito === "Centelha" ||
-          (divino.habilidadesNucleo || []).includes(s.nome)),
-    );
-    const expectedProficiencyNames = expectedProficiencies.map((s) => s.nome);
-
-    const missingProficiencies = expectedProficiencyNames.filter(
-      (name) => !proficiencias.includes(name),
-    );
-    const outdatedProficiencies = proficiencias.filter(
-      (name) =>
-        dbProficiencyNames.includes(name) &&
-        !expectedProficiencyNames.includes(name),
-    );
-
-    if (missingProficiencies.length > 0 || outdatedProficiencies.length > 0) {
-      const nextProficiencies = [
-        ...proficiencias.filter(
-          (name) =>
-            !dbProficiencyNames.includes(name) ||
-            expectedProficiencyNames.includes(name),
-        ),
-        ...missingProficiencies,
-      ];
-      onUpdateProficiencies(nextProficiencies);
-    }
-  }, [
-    dbTraits,
-    dbSkills,
-    divino.caminho,
-    divino.habilidadesNucleo,
-    ranque,
-    tracos,
-    aspectos,
-    proficiencias,
-    loading,
-    onUpdateTraits,
-    onUpdateAspects,
-    onUpdateProficiencies,
-  ]);
+  const onUpdateDivino = <K extends keyof Divino>(field: K, value: Divino[K]) => {
+    updateNestedField("divino", field, value);
+  };
 
   const PATHWAYS = useMemo(() => {
     const base = ["Destruição", "Morte"];
-    if (divino.caminho && !base.includes(divino.caminho)) {
+    if (divino?.caminho && !base.includes(divino.caminho)) {
       base.push(divino.caminho);
     }
     dbTraits.forEach((t) => {
@@ -268,7 +114,9 @@ const DivinePanel = memo(function DivinePanel({
       }
     });
     return base;
-  }, [divino.caminho, dbTraits, dbSkills]);
+  }, [divino?.caminho, dbTraits, dbSkills]);
+
+  if (!divino || !ranque) return null;
 
   const pesoInfo =
     PESO_DIVINO.find((p) => p.nivel === divino.pesoDivino) || PESO_DIVINO[0];
@@ -392,8 +240,14 @@ const DivinePanel = memo(function DivinePanel({
           <input
             id="divine-persona"
             type="text"
-            value={divino.persona}
-            onChange={(e) => onUpdateDivino("persona", e.target.value)}
+            value={localPersona ?? divino.persona}
+            onChange={(e) => setLocalPersona(e.target.value)}
+            onBlur={() => {
+              if (localPersona !== null) {
+                onUpdateDivino("persona", localPersona);
+                setLocalPersona(null);
+              }
+            }}
             placeholder="Nome da Persona divina"
             className="w-full bg-base/50 border border-surface-light rounded-lg px-3 py-2 text-sm text-parchment placeholder-parchment-dim/40 focus:border-arcane outline-none transition-all"
           />
@@ -619,7 +473,7 @@ const DivinePanel = memo(function DivinePanel({
 
         <div className="h-px bg-gradient-to-r from-transparent via-arcane/30 to-transparent" />
 
-        <AnchorCard ancoras={divino.ancoras} onUpdate={onUpdateAnchors} />
+        <AnchorCard />
       </div>
     </section>
   );

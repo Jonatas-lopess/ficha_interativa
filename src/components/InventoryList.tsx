@@ -2,17 +2,18 @@ import { useState, memo } from "react";
 import SectionHeader from "./SectionHeader";
 import { BackpackIcon } from "./Icons";
 import { Equipamento } from "../types";
+import { useSheetStore } from "../store/sheetStore";
 
-interface Props {
-  equipamentos: Equipamento[];
-  onUpdate: (equipamentos: Equipamento[]) => void;
-}
+const InventoryList = memo(function InventoryList() {
+  const equipamentos = useSheetStore((s) => s.character?.equipamentos ?? []);
+  const updateField = useSheetStore((s) => s.updateField);
 
-const InventoryList = memo(function InventoryList({
-  equipamentos,
-  onUpdate,
-}: Props) {
+  const onUpdate = (next: Equipamento[]) => updateField("equipamentos", next);
+
   const [novoItem, setNovoItem] = useState("");
+  // Local state for text inputs — saved on blur
+  const [localNomes, setLocalNomes] = useState<Record<number, string>>({});
+  const [localDescs, setLocalDescs] = useState<Record<number, string>>({});
 
   const handleAdd = () => {
     const trimmed = novoItem.trim();
@@ -21,18 +22,42 @@ const InventoryList = memo(function InventoryList({
     setNovoItem("");
   };
 
-  const handleUpdateItem = (
-    index: number,
-    field: keyof Equipamento,
-    value: string,
-  ) => {
-    const novos = [...equipamentos];
-    novos[index] = { ...novos[index], [field]: value };
-    onUpdate(novos);
-  };
-
   const handleRemove = (index: number) => {
     onUpdate(equipamentos.filter((_, i) => i !== index));
+    setLocalNomes((prev) => {
+      const next = { ...prev };
+      delete next[index];
+      return next;
+    });
+    setLocalDescs((prev) => {
+      const next = { ...prev };
+      delete next[index];
+      return next;
+    });
+  };
+
+  const handleNomeBlur = (index: number) => {
+    if (!(index in localNomes)) return;
+    const novos = [...equipamentos];
+    novos[index] = { ...novos[index], nome: localNomes[index] };
+    onUpdate(novos);
+    setLocalNomes((prev) => {
+      const next = { ...prev };
+      delete next[index];
+      return next;
+    });
+  };
+
+  const handleDescBlur = (index: number) => {
+    if (!(index in localDescs)) return;
+    const novos = [...equipamentos];
+    novos[index] = { ...novos[index], descricao: localDescs[index] };
+    onUpdate(novos);
+    setLocalDescs((prev) => {
+      const next = { ...prev };
+      delete next[index];
+      return next;
+    });
   };
 
   return (
@@ -77,8 +102,11 @@ const InventoryList = memo(function InventoryList({
               <div className="flex items-center justify-between mb-1">
                 <input
                   type="text"
-                  value={item.nome}
-                  onChange={(e) => handleUpdateItem(i, "nome", e.target.value)}
+                  value={i in localNomes ? localNomes[i] : item.nome}
+                  onChange={(e) =>
+                    setLocalNomes((prev) => ({ ...prev, [i]: e.target.value }))
+                  }
+                  onBlur={() => handleNomeBlur(i)}
                   className="bg-transparent text-sm font-bold text-gold outline-none w-full mr-2 focus:border-b border-gold/30"
                 />
                 <button
@@ -90,10 +118,11 @@ const InventoryList = memo(function InventoryList({
                 </button>
               </div>
               <textarea
-                value={item.descricao}
+                value={i in localDescs ? localDescs[i] : item.descricao}
                 onChange={(e) =>
-                  handleUpdateItem(i, "descricao", e.target.value)
+                  setLocalDescs((prev) => ({ ...prev, [i]: e.target.value }))
                 }
+                onBlur={() => handleDescBlur(i)}
                 placeholder="Descrição do item..."
                 className="w-full bg-transparent text-xs text-parchment-dim outline-none resize-y min-h-[2.5rem] max-h-[10rem] overflow-y-auto transition-all"
               />

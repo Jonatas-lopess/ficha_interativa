@@ -1,19 +1,19 @@
 import { useState, memo } from "react";
 import SectionHeader from "./SectionHeader";
 import { BookOpenIcon } from "./Icons";
-import { Character } from "../types";
+import { useSheetStore } from "../store/sheetStore";
 
-interface Props {
-  character: Character;
-  updateField: <K extends keyof Character>(
-    field: K,
-    value: Character[K],
-  ) => void;
-}
+const StoryPanel = memo(function StoryPanel() {
+  const character = useSheetStore((s) => s.character);
+  const updateField = useSheetStore((s) => s.updateField);
 
-const StoryPanel = memo(function StoryPanel({ character, updateField }: Props) {
   const [frase, setFrase] = useState("");
   const [objetivo, setObjetivo] = useState("");
+  // Blur-save local state for long-form text
+  const [localHistoria, setLocalHistoria] = useState<string | null>(null);
+  const [localNotas, setLocalNotas] = useState<string | null>(null);
+
+  if (!character) return null;
 
   const addFrase = () => {
     if (!frase.trim()) return;
@@ -62,8 +62,14 @@ const StoryPanel = memo(function StoryPanel({ character, updateField }: Props) {
         </label>
         <textarea
           id="char-historia"
-          value={character.historia}
-          onChange={(e) => updateField("historia", e.target.value)}
+          value={localHistoria ?? character.historia}
+          onChange={(e) => setLocalHistoria(e.target.value)}
+          onBlur={() => {
+            if (localHistoria !== null) {
+              updateField("historia", localHistoria);
+              setLocalHistoria(null);
+            }
+          }}
           placeholder="A história do personagem..."
           rows={4}
           className="w-full bg-base border border-surface-light rounded-lg px-3 py-2 text-sm text-parchment placeholder-parchment-dim/40 focus:border-gold outline-none transition-all resize-y min-h-[16rem]"
@@ -164,8 +170,14 @@ const StoryPanel = memo(function StoryPanel({ character, updateField }: Props) {
         </label>
         <textarea
           id="char-notas"
-          value={character.notas}
-          onChange={(e) => updateField("notas", e.target.value)}
+          value={localNotas ?? character.notas}
+          onChange={(e) => setLocalNotas(e.target.value)}
+          onBlur={() => {
+            if (localNotas !== null) {
+              updateField("notas", localNotas);
+              setLocalNotas(null);
+            }
+          }}
           placeholder="Anotações gerais..."
           rows={3}
           className="w-full bg-base border border-surface-light rounded-lg px-3 py-2 text-sm text-parchment placeholder-parchment-dim/40 focus:border-gold outline-none transition-all resize-y min-h-[4.5rem]"

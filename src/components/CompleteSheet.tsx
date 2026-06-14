@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import Header from "./Header";
 import StressBar from "./StressBar";
 import InjuryTracker from "./InjuryTracker";
@@ -9,15 +9,7 @@ import DivinePanel from "./DivinePanel";
 import InventoryList from "./InventoryList";
 import StoryPanel from "./StoryPanel";
 import FloatingDiceRoller from "./FloatingDiceRoller";
-import {
-  Character,
-  RankData,
-  RanqueNome,
-  Divino,
-  Ancora,
-  Lesoes,
-  LesaoDescricao,
-} from "../types";
+import { useSheetStore } from "../store/sheetStore";
 
 type TabId = "identidade" | "combate" | "tracos" | "inventario" | "divino";
 
@@ -37,85 +29,19 @@ const TABS: TabDef[] = [
 ];
 
 interface Props {
-  character: Character;
-  rankData: RankData;
-  updateField: <K extends keyof Character>(
-    field: K,
-    value: Character[K],
-  ) => void;
-  updateNestedField: <K extends keyof Character, NK extends keyof Character[K]>(
-    parent: K,
-    field: NK,
-    value: Character[K][NK],
-  ) => void;
-  updateRanque: (novoRanque: RanqueNome) => void;
-  toggleEstresse: (index: number) => void;
-  adjustEstresse: (delta: number) => void;
-  exportarFicha: () => void;
-  importarFicha: (jsonString: string) => { success: boolean; error?: string };
-  resetarFicha: () => void;
-  salvarOnline: () => void;
-  onlineSaveStatus: "idle" | "saving" | "success" | "error";
   onBack?: () => void;
   onOpenCatalog?: () => void;
 }
 
-export default function CompleteSheet({
-  character,
-  rankData,
-  updateField,
-  updateNestedField,
-  updateRanque,
-  toggleEstresse,
-  adjustEstresse,
-  exportarFicha,
-  importarFicha,
-  resetarFicha,
-  salvarOnline,
-  onlineSaveStatus,
-  onBack,
-  onOpenCatalog,
-}: Props) {
+export default function CompleteSheet({ onBack, onOpenCatalog }: Props) {
+  const ranque = useSheetStore((s) => s.character?.ranque);
   const [activeTab, setActiveTab] = useState<TabId>("identidade");
 
-  const handleInjuryUpdate = useCallback(
-    (
-      categoria: keyof Lesoes,
-      severidade: "leves" | "graves" | "criticas",
-      valor: number | LesaoDescricao[],
-    ) => {
-      updateField("lesoes", {
-        ...character.lesoes,
-        [categoria]: {
-          ...character.lesoes[categoria],
-          [severidade]: valor,
-        },
-      });
-    },
-    [character.lesoes, updateField],
-  );
-
-  const handleUpdateAnchors = useCallback(
-    (ancoras: Ancora[]) => {
-      updateField("divino", { ...character.divino, ancoras });
-    },
-    [character.divino, updateField],
-  );
-
-  const handleUpdateDivino = useCallback(
-    <K extends keyof Divino>(field: K, value: Divino[K]) => {
-      updateNestedField("divino", field, value as any);
-    },
-    [updateNestedField],
-  );
-
-  const canHaveDivine = character.ranque !== "Humano";
-
+  const canHaveDivine = ranque !== "Humano" && ranque !== undefined;
   const visibleTabs = TABS.filter((t) => !t.conditional || canHaveDivine);
 
-  // If current tab becomes hidden (e.g. rank changed to Humano while on divino tab), fall back
+  // If current tab becomes hidden (rank changed to Humano while on divino), fall back
   if (!visibleTabs.some((t) => t.id === activeTab)) {
-    // Can't call setState during render, but this is safe as a guard — it'll fire once
     queueMicrotask(() => setActiveTab("identidade"));
   }
 
@@ -169,44 +95,20 @@ export default function CompleteSheet({
           {/* — Geral — */}
           {activeTab === "identidade" && (
             <div className="space-y-6 animate-fadeIn">
-              <Header
-                character={character}
-                updateField={updateField}
-                updateRanque={updateRanque}
-                exportarFicha={exportarFicha}
-                importarFicha={importarFicha as any}
-                resetarFicha={resetarFicha}
-                salvarOnline={salvarOnline}
-                onlineSaveStatus={onlineSaveStatus}
-              />
-              <StoryPanel character={character} updateField={updateField} />
+              <Header />
+              <StoryPanel />
             </div>
           )}
 
           {/* — Combate — */}
           {activeTab === "combate" && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fadeIn">
-              <InjuryTracker
-                lesoes={character.lesoes}
-                rankData={rankData}
-                onUpdate={handleInjuryUpdate}
-              />
+              <InjuryTracker />
 
               <div className="space-y-6">
-                <StressBar
-                  estresse={character.estresse}
-                  maxEstresse={rankData.estresseMaximo}
-                  onToggle={toggleEstresse}
-                  onAdjust={adjustEstresse}
-                />
-                <ProficiencyList
-                  proficiencias={character.proficiencias}
-                  onUpdate={(val) => updateField("proficiencias", val)}
-                />
-                <AspectList
-                  aspectos={character.aspectos}
-                  onUpdate={(val) => updateField("aspectos", val)}
-                />
+                <StressBar />
+                <ProficiencyList />
+                <AspectList />
               </div>
             </div>
           )}
@@ -214,41 +116,21 @@ export default function CompleteSheet({
           {/* — Traços — */}
           {activeTab === "tracos" && (
             <div className="animate-fadeIn">
-              <TraitCard
-                tracos={character.tracos}
-                onUpdate={(val) => updateField("tracos", val)}
-                onOpenCatalog={onOpenCatalog}
-              />
+              <TraitCard onOpenCatalog={onOpenCatalog} />
             </div>
           )}
 
           {/* — Inventário — */}
           {activeTab === "inventario" && (
             <div className="animate-fadeIn">
-              <InventoryList
-                equipamentos={character.equipamentos}
-                onUpdate={(val) => updateField("equipamentos", val)}
-              />
+              <InventoryList />
             </div>
           )}
 
           {/* — Divino (conditional) — */}
           {activeTab === "divino" && canHaveDivine && (
             <div className="animate-fadeIn">
-              <DivinePanel
-                divino={character.divino}
-                ranque={character.ranque}
-                onUpdateDivino={handleUpdateDivino}
-                onUpdateAnchors={handleUpdateAnchors}
-                tracos={character.tracos}
-                onUpdateTraits={(val) => updateField("tracos", val)}
-                aspectos={character.aspectos}
-                onUpdateAspects={(val) => updateField("aspectos", val)}
-                proficiencias={character.proficiencias}
-                onUpdateProficiencies={(val) =>
-                  updateField("proficiencias", val)
-                }
-              />
+              <DivinePanel />
             </div>
           )}
         </main>

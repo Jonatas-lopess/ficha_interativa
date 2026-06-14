@@ -1,16 +1,13 @@
 import { useState, memo } from "react";
 import SectionHeader from "./SectionHeader";
 import { BrainIcon } from "./Icons";
+import { useSheetStore } from "../store/sheetStore";
 
-interface Props {
-  proficiencias: string[];
-  onUpdate: (proficiencias: string[]) => void;
-}
+const ProficiencyList = memo(function ProficiencyList() {
+  const proficiencias = useSheetStore((s) => s.character?.proficiencias ?? []);
+  const updateField = useSheetStore((s) => s.updateField);
 
-const ProficiencyList = memo(function ProficiencyList({
-  proficiencias,
-  onUpdate,
-}: Props) {
+  const onUpdate = (next: string[]) => updateField("proficiencias", next);
   const [novaProf, setNovaProf] = useState("");
 
   const handleAdd = () => {

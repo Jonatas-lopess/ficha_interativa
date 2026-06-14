@@ -1,7 +1,8 @@
-import { useState, memo } from "react";
+import { useState, useCallback, memo } from "react";
 import SectionHeader from "./SectionHeader";
 import { HeartPulseIcon } from "./Icons";
 import { Lesoes, RankData, LesaoDescricao } from "../types";
+import { useSheetStore } from "../store/sheetStore";
 
 const CATEGORIAS: Array<{ key: keyof Lesoes; label: string; icon: string }> = [
   { key: "fisicas", label: "Físicas", icon: "⚔" },
@@ -9,27 +10,35 @@ const CATEGORIAS: Array<{ key: keyof Lesoes; label: string; icon: string }> = [
   { key: "espirituais", label: "Espirituais", icon: "✦" },
 ];
 
-interface Props {
-  lesoes: Lesoes;
-  rankData: RankData;
-  onUpdate: (
-    cat: keyof Lesoes,
-    sev: "leves" | "graves" | "criticas",
-    valor: number | LesaoDescricao[],
-  ) => void;
-}
+const InjuryTracker = memo(function InjuryTracker() {
+  const lesoes = useSheetStore((s) => s.character?.lesoes);
+  const rankData = useSheetStore((s) => s.rankData);
+  const updateField = useSheetStore((s) => s.updateField);
 
-const InjuryTracker = memo(function InjuryTracker({
-  lesoes,
-  rankData,
-  onUpdate,
-}: Props) {
   // Track which injury description is being edited
   const [editing, setEditing] = useState<{
     cat: keyof Lesoes;
     sev: "graves" | "criticas";
     idx: number;
   } | null>(null);
+
+  // Local text state for description inputs (blur-to-save)
+  const [localDescs, setLocalDescs] = useState<
+    Record<string, string>
+  >({});
+
+  if (!lesoes) return null;
+
+  const onUpdate = (
+    cat: keyof Lesoes,
+    sev: "leves" | "graves" | "criticas",
+    valor: number | LesaoDescricao[],
+  ) => {
+    updateField("lesoes", {
+      ...lesoes,
+      [cat]: { ...lesoes[cat], [sev]: valor },
+    });
+  };
 
   // --- Leves (simple counter) ---
   const handleLevesChange = (cat: keyof Lesoes, delta: number) => {
@@ -45,7 +54,6 @@ const InjuryTracker = memo(function InjuryTracker({
     sev: "graves" | "criticas",
   ): LesaoDescricao[] => {
     const val = lesoes[cat][sev];
-    // Backwards compatibility: if it's a number, convert to array
     if (typeof val === "number")
       return Array.from({ length: val as number }, () => ({ descricao: "" }));
     return val || [];
@@ -60,7 +68,6 @@ const InjuryTracker = memo(function InjuryTracker({
     if (arr.length >= getMax(sev)) return;
     const newArr = [...arr, { descricao: "" }];
     onUpdate(cat, sev, newArr);
-    // Auto-focus the new entry
     setEditing({ cat, sev, idx: newArr.length - 1 });
   };
 
@@ -74,17 +81,24 @@ const InjuryTracker = memo(function InjuryTracker({
     setEditing(null);
   };
 
-  const handleDescChange = (
+  // Save description only on blur
+  const handleDescBlur = (
     cat: keyof Lesoes,
     sev: "graves" | "criticas",
     idx: number,
-    value: string,
   ) => {
+    const key = `${cat}-${sev}-${idx}`;
+    if (!(key in localDescs)) return;
     const arr = getArray(cat, sev);
     const updated = arr.map((item, i) =>
-      i === idx ? { ...item, descricao: value } : item,
+      i === idx ? { ...item, descricao: localDescs[key] } : item,
     );
     onUpdate(cat, sev, updated);
+    setLocalDescs((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
   };
 
   const sevConfig: Array<{
@@ -204,32 +218,38 @@ const InjuryTracker = memo(function InjuryTracker({
                     {/* Description entries */}
                     {arr.length > 0 && (
                       <div className="mt-1.5 ml-[4.25rem] space-y-1">
-                        {arr.map((injury, idx) => (
-                          <div key={idx} className="flex items-center gap-2">
-                            <span
-                              className={`w-2 h-2 rounded-full shrink-0 ${sev.dot}`}
-                            />
-                            <input
-                              type="text"
-                              value={injury.descricao}
-                              onChange={(e) =>
-                                handleDescChange(
-                                  cat.key,
-                                  sev.key,
-                                  idx,
-                                  e.target.value,
-                                )
-                              }
-                              placeholder={`Descreva a lesão ${sev.label.toLowerCase().slice(0, -1)}...`}
-                              className="flex-1 bg-base/50 border border-surface-light/50 rounded px-2 py-1 text-xs text-parchment placeholder-parchment-dim/30 focus:border-gold-dim outline-none transition-all"
-                              autoFocus={
-                                editing?.cat === cat.key &&
-                                editing?.sev === sev.key &&
-                                editing?.idx === idx
-                              }
-                            />
-                          </div>
-                        ))}
+                        {arr.map((injury, idx) => {
+                          const key = `${cat.key}-${sev.key}-${idx}`;
+                          const displayValue =
+                            key in localDescs ? localDescs[key] : injury.descricao;
+                          return (
+                            <div key={idx} className="flex items-center gap-2">
+                              <span
+                                className={`w-2 h-2 rounded-full shrink-0 ${sev.dot}`}
+                              />
+                              <input
+                                type="text"
+                                value={displayValue}
+                                onChange={(e) =>
+                                  setLocalDescs((prev) => ({
+                                    ...prev,
+                                    [key]: e.target.value,
+                                  }))
+                                }
+                                onBlur={() =>
+                                  handleDescBlur(cat.key, sev.key, idx)
+                                }
+                                placeholder={`Descreva a lesão ${sev.label.toLowerCase().slice(0, -1)}...`}
+                                className="flex-1 bg-base/50 border border-surface-light/50 rounded px-2 py-1 text-xs text-parchment placeholder-parchment-dim/30 focus:border-gold-dim outline-none transition-all"
+                                autoFocus={
+                                  editing?.cat === cat.key &&
+                                  editing?.sev === sev.key &&
+                                  editing?.idx === idx
+                                }
+                              />
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </div>

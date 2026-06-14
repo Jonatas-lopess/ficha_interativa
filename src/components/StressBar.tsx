@@ -2,6 +2,7 @@ import { memo } from "react";
 import SectionHeader from "./SectionHeader";
 import { SparklesIcon } from "./Icons";
 import { EstresseEstado } from "../types";
+import { useSheetStore } from "../store/sheetStore";
 
 const STATE_STYLES: Record<EstresseEstado, string> = {
   livre: "bg-stress-free border-stress-free/50 hover:border-parchment-dim",
@@ -17,19 +18,12 @@ const STATE_LABELS: Record<EstresseEstado, string> = {
   corrompido: "Corrompido",
 };
 
-interface Props {
-  estresse: EstresseEstado[];
-  maxEstresse?: number; // kept for compatibility if needed, though not directly used in rendering loops below
-  onToggle: (index: number) => void;
-  onAdjust: (delta: number) => void;
-}
 
-const StressBar = memo(function StressBar({
-  estresse,
-  maxEstresse,
-  onToggle,
-  onAdjust,
-}: Props) {
+const StressBar = memo(function StressBar() {
+  const estresse = useSheetStore((s) => s.character?.estresse ?? []);
+  const toggleEstresse = useSheetStore((s) => s.toggleEstresse);
+  const adjustEstresse = useSheetStore((s) => s.adjustEstresse);
+
   const gastos = estresse.filter((s) => s === "gasto").length;
   const corrompidos = estresse.filter((s) => s === "corrompido").length;
   const livres = estresse.filter((s) => s === "livre").length;
@@ -45,7 +39,7 @@ const StressBar = memo(function StressBar({
       <div className="flex items-center justify-center gap-1 md:gap-2 py-2">
         {/* Seta Esquerda (Diminuir) */}
         <button
-          onClick={() => onAdjust(-1)}
+          onClick={() => adjustEstresse(-1)}
           className="text-parchment-dim hover:text-gold transition-colors cursor-pointer text-lg md:text-xl font-bold px-2 shrink-0"
           title="Diminuir Estresse"
         >
@@ -57,7 +51,7 @@ const StressBar = memo(function StressBar({
             <button
               key={i}
               id={`stress-${i}`}
-              onClick={() => onToggle(i)}
+              onClick={() => toggleEstresse(i)}
               className={`w-7 h-7 md:w-8 md:h-8 shrink-0 rounded-full border-2 transition-all duration-200 cursor-pointer ${STATE_STYLES[estado]}`}
               title={`Bolha ${i + 1}: ${STATE_LABELS[estado]}${estado === "corrompido" ? " (Clique para limpar corrupção)" : ""}`}
               aria-label={`Estresse ${i + 1}: ${STATE_LABELS[estado]}`}
@@ -67,7 +61,7 @@ const StressBar = memo(function StressBar({
 
         {/* Seta Direita (Aumentar) */}
         <button
-          onClick={() => onAdjust(1)}
+          onClick={() => adjustEstresse(1)}
           className="text-parchment-dim hover:text-gold transition-colors cursor-pointer text-lg md:text-xl font-bold px-2 shrink-0"
           title="Aumentar Estresse"
         >

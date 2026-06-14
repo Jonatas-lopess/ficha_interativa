@@ -1,3 +1,7 @@
+/**
+ * @deprecated Superseded by `useSheetStore` (Zustand). Safe to delete once
+ * all call sites are confirmed removed. No active usages remain in App.tsx.
+ */
 import { useCallback, useEffect, useState, useRef } from "react";
 import { createDefaultCharacter } from "../data/defaultCharacter";
 import { RANQUES } from "../data/rankData";

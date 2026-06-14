@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { Ancora } from "../types";
+import { useSheetStore } from "../store/sheetStore";
 
-interface Props {
-  ancoras: Ancora[];
-  onUpdate: (ancoras: Ancora[]) => void;
-}
+export default function AnchorCard() {
+  const ancoras = useSheetStore((s) => s.character?.divino?.ancoras ?? []);
+  const updateNestedField = useSheetStore((s) => s.updateNestedField);
 
-export default function AnchorCard({ ancoras, onUpdate }: Props) {
+  const onUpdate = (next: Ancora[]) => updateNestedField("divino", "ancoras", next);
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState<Ancora>({ nome: "", descricao: "", erosao: 0 });
 

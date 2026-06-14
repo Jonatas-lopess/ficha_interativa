@@ -1,38 +1,27 @@
+import { useState } from "react";
 import StressBar from "./StressBar";
 import InjuryTracker from "./InjuryTracker";
 import ProficiencyList from "./ProficiencyList";
 import TraitCard from "./TraitCard";
 import InventoryList from "./InventoryList";
-import { Character, RankData, RanqueNome, Lesoes, LesaoDescricao } from "../types";
+import { RanqueNome } from "../types";
+import { useSheetStore } from "../store/sheetStore";
 
 interface Props {
-  character: Character;
-  rankData: RankData;
-  updateField: <K extends keyof Character>(field: K, value: Character[K]) => void;
-  toggleEstresse: (index: number) => void;
-  adjustEstresse: (delta: number) => void;
-  exportarFicha: () => void;
   onBack?: () => void;
 }
 
-export default function NPCSheet({
-  character,
-  rankData,
-  updateField,
-  toggleEstresse,
-  adjustEstresse,
-  exportarFicha,
-  onBack,
-}: Props) {
-  const handleInjuryUpdate = (categoria: keyof Lesoes, severidade: 'leves' | 'graves' | 'criticas', valor: number | LesaoDescricao[]) => {
-    updateField("lesoes", {
-      ...character.lesoes,
-      [categoria]: {
-        ...character.lesoes[categoria],
-        [severidade]: valor,
-      },
-    });
-  };
+export default function NPCSheet({ onBack }: Props) {
+  const character = useSheetStore((s) => s.character);
+  const updateField = useSheetStore((s) => s.updateField);
+  const exportCharacter = useSheetStore((s) => s.exportCharacter);
+
+  // Blur-save for text fields
+  const [localNome, setLocalNome] = useState<string | null>(null);
+  const [localDescricao, setLocalDescricao] = useState<string | null>(null);
+  const [localTaticas, setLocalTaticas] = useState<string | null>(null);
+
+  if (!character) return null;
 
   return (
     <div className="min-h-screen bg-base pb-12">
@@ -46,7 +35,7 @@ export default function NPCSheet({
         </button>
         <div className="flex gap-2">
           <button
-            onClick={exportarFicha}
+            onClick={exportCharacter}
             className="px-3 py-1.5 rounded-full border border-surface-light bg-surface/80 text-parchment-dim text-sm hover:border-gold hover:text-gold transition-all cursor-pointer"
           >
             ↓ Exportar
@@ -61,8 +50,14 @@ export default function NPCSheet({
             <div className="flex-1">
               <input
                 type="text"
-                value={character.nome}
-                onChange={(e) => updateField("nome", e.target.value)}
+                value={localNome ?? character.nome}
+                onChange={(e) => setLocalNome(e.target.value)}
+                onBlur={() => {
+                  if (localNome !== null) {
+                    updateField("nome", localNome);
+                    setLocalNome(null);
+                  }
+                }}
                 placeholder="Nome da Ameaça ou Genérico"
                 className="w-full bg-transparent font-title text-2xl text-injury-severe border-b border-transparent focus:border-injury-severe/50 outline-none placeholder:text-injury-severe/30"
               />
@@ -89,8 +84,14 @@ export default function NPCSheet({
               Descrição / Lore
             </label>
             <textarea
-              value={character.descricao || ""}
-              onChange={(e) => updateField("descricao", e.target.value)}
+              value={localDescricao ?? (character.descricao || "")}
+              onChange={(e) => setLocalDescricao(e.target.value)}
+              onBlur={() => {
+                if (localDescricao !== null) {
+                  updateField("descricao", localDescricao);
+                  setLocalDescricao(null);
+                }
+              }}
               placeholder="Descreva o que é esta ameaça, como age e qual seu contexto..."
               className="w-full bg-base border border-surface-light rounded-lg px-3 py-2 text-sm text-parchment focus:border-injury-severe outline-none min-h-[80px] resize-y"
             />
@@ -100,46 +101,34 @@ export default function NPCSheet({
         {/* Vitalidade */}
         <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
-            <StressBar
-              estresse={character.estresse}
-              maxEstresse={rankData.estresseMaximo}
-              onToggle={toggleEstresse}
-              onAdjust={adjustEstresse}
-            />
-            <InjuryTracker
-              lesoes={character.lesoes}
-              rankData={rankData}
-              onUpdate={handleInjuryUpdate}
-            />
+            <StressBar />
+            <InjuryTracker />
           </div>
 
           <div className="space-y-4">
-            <ProficiencyList
-              proficiencias={character.proficiencias}
-              onUpdate={(val) => updateField("proficiencias", val)}
-            />
+            <ProficiencyList />
             <div className="pt-2">
-              <InventoryList
-                equipamentos={character.equipamentos}
-                onUpdate={(val) => updateField("equipamentos", val)}
-              />
+              <InventoryList />
             </div>
           </div>
         </section>
 
         {/* Traços - Detalhados para NPCs */}
         <section>
-          <TraitCard
-            tracos={character.tracos}
-            onUpdate={(val) => updateField("tracos", val)}
-          />
+          <TraitCard />
         </section>
 
         {/* Táticas em Combate */}
         <section className="bg-surface rounded-xl border border-surface-light p-6">
           <textarea
-            value={character.taticas || ""}
-            onChange={(e) => updateField("taticas", e.target.value)}
+            value={localTaticas ?? (character.taticas || "")}
+            onChange={(e) => setLocalTaticas(e.target.value)}
+            onBlur={() => {
+              if (localTaticas !== null) {
+                updateField("taticas", localTaticas);
+                setLocalTaticas(null);
+              }
+            }}
             placeholder="Como o inimigo se porta em combate? Quais os alvos preferenciais? Quando eles fogem?"
             className="w-full bg-base border border-surface-light rounded-lg px-4 py-3 text-sm text-parchment focus:border-injury-severe outline-none min-h-[150px] resize-y leading-relaxed"
           />

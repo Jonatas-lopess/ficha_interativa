@@ -1,41 +1,42 @@
-import { useRef, memo } from "react";
+import { useRef, useState, memo } from "react";
 import { RANQUES } from "../data/rankData";
 import { importarDeArquivo } from "../utils/exportImport";
 import SectionHeader from "./SectionHeader";
 import { UserIcon } from "./Icons";
-import { Character, RanqueNome } from "../types";
+import { RanqueNome } from "../types";
 import { isSupabaseConfigured } from "../db/supabaseClient";
+import { useSheetStore, useShallow } from "../store/sheetStore";
 
-interface Props {
-  character: Character;
-  updateField: <K extends keyof Character>(
-    field: K,
-    value: Character[K],
-  ) => void;
-  updateRanque: (novoRanque: RanqueNome) => void;
-  exportarFicha: () => void;
-  importarFicha: (jsonString: string) => void;
-  resetarFicha: () => void;
-  salvarOnline: () => void;
-  onlineSaveStatus: "idle" | "saving" | "success" | "error";
-}
+const Header = memo(function Header() {
+  const { character, onlineSaveStatus } = useSheetStore(
+    useShallow((s) => ({
+      character: s.character,
+      onlineSaveStatus: s.onlineSaveStatus,
+    })),
+  );
+  const updateField = useSheetStore((s) => s.updateField);
+  const updateRanque = useSheetStore((s) => s.updateRanque);
+  const exportCharacter = useSheetStore((s) => s.exportCharacter);
+  const importCharacter = useSheetStore((s) => s.importCharacter);
+  const resetCharacter = useSheetStore((s) => s.resetCharacter);
+  const salvarOnline = useSheetStore((s) => s.salvarOnline);
 
-const Header = memo(function Header({
-  character,
-  updateField,
-  updateRanque,
-  exportarFicha,
-  importarFicha,
-  resetarFicha,
-  salvarOnline,
-  onlineSaveStatus,
-}: Props) {
+  // Local state for text inputs — persisted on blur
+  const [localNome, setLocalNome] = useState<string | null>(null);
+  const [localIdade, setLocalIdade] = useState<string | null>(null);
+  const [localAlinhamento, setLocalAlinhamento] = useState<string | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  if (!character) return null;
+
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     try {
       const data = await importarDeArquivo(file);
-      importarFicha(JSON.stringify(data));
+      const result = importCharacter(JSON.stringify(data));
+      if (!result.success) alert(result.error);
     } catch (err: any) {
       alert(err.message);
     }
@@ -67,8 +68,14 @@ const Header = memo(function Header({
             <input
               id="char-nome"
               type="text"
-              value={character.nome}
-              onChange={(e) => updateField("nome", e.target.value)}
+              value={localNome ?? character.nome}
+              onChange={(e) => setLocalNome(e.target.value)}
+              onBlur={() => {
+                if (localNome !== null) {
+                  updateField("nome", localNome);
+                  setLocalNome(null);
+                }
+              }}
               placeholder="Nome do personagem"
               className="w-full bg-base border border-surface-light rounded-lg px-3 py-2 text-parchment placeholder-parchment-dim/40 focus:border-gold focus:ring-1 focus:ring-gold/30 outline-none transition-all"
             />
@@ -85,8 +92,14 @@ const Header = memo(function Header({
             <input
               id="char-idade"
               type="text"
-              value={character.idade}
-              onChange={(e) => updateField("idade", e.target.value)}
+              value={localIdade ?? character.idade}
+              onChange={(e) => setLocalIdade(e.target.value)}
+              onBlur={() => {
+                if (localIdade !== null) {
+                  updateField("idade", localIdade);
+                  setLocalIdade(null);
+                }
+              }}
               placeholder="—"
               className="w-full bg-base border border-surface-light rounded-lg px-3 py-2 text-parchment placeholder-parchment-dim/40 focus:border-gold focus:ring-1 focus:ring-gold/30 outline-none transition-all"
             />
@@ -126,8 +139,14 @@ const Header = memo(function Header({
           <input
             id="char-alinhamento"
             type="text"
-            value={character.alinhamento}
-            onChange={(e) => updateField("alinhamento", e.target.value)}
+            value={localAlinhamento ?? character.alinhamento}
+            onChange={(e) => setLocalAlinhamento(e.target.value)}
+            onBlur={() => {
+              if (localAlinhamento !== null) {
+                updateField("alinhamento", localAlinhamento);
+                setLocalAlinhamento(null);
+              }
+            }}
             placeholder="Ex: Ordem Pragmática"
             className="w-full bg-base border border-surface-light rounded-lg px-3 py-2 text-parchment placeholder-parchment-dim/40 focus:border-gold focus:ring-1 focus:ring-gold/30 outline-none transition-all"
           />
@@ -136,11 +155,27 @@ const Header = memo(function Header({
 
       {/* Action buttons */}
       <div className="flex flex-wrap gap-2 mt-4 justify-end items-center">
+        {/* Import (hidden) */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".json"
+          className="hidden"
+          onChange={handleImport}
+        />
+        <button
+          id="btn-importar"
+          onClick={() => fileInputRef.current?.click()}
+          className="px-4 py-2 text-xs uppercase tracking-wider bg-surface border border-surface-light text-parchment-dim rounded-lg hover:border-gold-dim hover:text-gold transition-all"
+        >
+          ⬆ Importar JSON
+        </button>
+
         {/* Export split group */}
         <div className="flex rounded-lg overflow-hidden border border-gold-dim">
           <button
             id="btn-exportar"
-            onClick={exportarFicha}
+            onClick={exportCharacter}
             className="px-4 py-2 text-xs uppercase tracking-wider bg-surface text-gold-dim hover:bg-gold/10 hover:text-gold transition-all"
           >
             ⬇ Exportar JSON
@@ -150,7 +185,7 @@ const Header = memo(function Header({
             {isSupabaseConfigured ? (
               <button
                 id="btn-salvar-online"
-                onClick={salvarOnline}
+                onClick={() => salvarOnline()}
                 disabled={onlineSaveStatus === "saving"}
                 className={`flex items-center gap-1.5 px-4 py-2 text-xs uppercase tracking-wider bg-surface border-l border-gold-dim transition-all cursor-pointer select-none
                   ${onlineSaveStatus === "success" ? "text-green-500 hover:text-green-400" : ""}
@@ -158,7 +193,6 @@ const Header = memo(function Header({
                   ${onlineSaveStatus === "saving" ? "text-gold-dim/70" : "text-gold-dim hover:bg-gold/10 hover:text-gold"}
                 `}
               >
-                {/* Spinner, Success Check, Error X, or Cloud Icon */}
                 {onlineSaveStatus === "saving" && (
                   <svg
                     className="animate-spin h-3.5 w-3.5 text-gold-dim"
@@ -288,7 +322,7 @@ const Header = memo(function Header({
                 "Tem certeza que deseja resetar a ficha? Todos os dados serão perdidos.",
               )
             ) {
-              resetarFicha();
+              resetCharacter();
             }
           }}
           className="px-4 py-2 text-xs uppercase tracking-wider bg-surface border border-injury-critical/30 text-injury-critical/70 rounded-lg hover:border-injury-critical hover:text-injury-critical transition-all"
