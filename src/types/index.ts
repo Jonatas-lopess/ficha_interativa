@@ -69,6 +69,7 @@ export interface Equipamento {
 export interface Character {
   id?: string;
   _modified?: string;
+  user_id?: string;
   nome: string;
   idade: string;
   alinhamento: string;

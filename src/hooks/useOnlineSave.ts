@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase, isSupabaseConfigured } from '../db/supabaseClient';
+import { getOrGenerateUserId } from '../utils/userId';
 import type { Character } from '../types';
 import type { Persisted } from '../repository/persistenceTypes';
 
@@ -16,9 +17,11 @@ export function useOnlineSave() {
 
     setStatus('saving');
     try {
-      // Prepara os dados para o Supabase, garantindo os campos de controle de replicação
+      const userId = getOrGenerateUserId();
+      // Prepara os dados para o Supabase, garantindo os campos de controle de replicação e o ID de proprietário
       const payload = {
         ...character,
+        user_id: userId,
         _deleted: false,
         _modified: new Date().toISOString(),
       };

@@ -1,6 +1,8 @@
 import { useRef, useState } from "react";
 import { importarDeArquivo } from "../utils/exportImport";
 import { SheetRegistryEntry, SheetTipo } from "../types";
+import { getOrGenerateUserId, setUserId } from "../utils/userId";
+import { isSupabaseConfigured } from "../db/supabaseClient";
 
 // ---------------------------------------------------------------------------
 // ActionCard
@@ -496,6 +498,25 @@ export default function HomePage({
   onOpenCodex,
   onOpenCatalogTracos,
 }: HomePageProps) {
+  const [editingUserId, setEditingUserId] = useState(false);
+  const [tempUserId, setTempUserId] = useState("");
+  const [copied, setCopied] = useState(false);
+  const currentUserId = getOrGenerateUserId();
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(currentUserId);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleSaveUserId = () => {
+    if (tempUserId.trim()) {
+      setUserId(tempUserId.trim());
+      setEditingUserId(false);
+      window.location.reload();
+    }
+  };
+
   return (
     <div className="min-h-screen bg-base">
       <div className="max-w-3xl mx-auto px-4 py-10">
@@ -509,6 +530,84 @@ export default function HomePage({
           </p>
           <div className="h-px bg-gradient-to-r from-transparent via-gold/30 to-transparent mt-6" />
         </header>
+
+        {/* Sincronização & Identidade */}
+        <div className="bg-surface rounded-xl border border-surface-light p-4 mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-gold text-base">☁</span>
+                <h2 className="font-title text-parchment text-sm tracking-wide">
+                  Sincronização de Fichas
+                </h2>
+                <span className={`text-[9px] px-1.5 py-0.5 rounded font-mono leading-none ${
+                  isSupabaseConfigured
+                    ? "bg-green-500/10 text-green-400 border border-green-500/20"
+                    : "bg-parchment-dim/10 text-parchment-dim/60 border border-surface-light"
+                }`}>
+                  {isSupabaseConfigured ? "Online (Conectado)" : "Local-First Only"}
+                </span>
+              </div>
+              <p className="text-xs text-parchment-dim leading-relaxed">
+                Suas fichas são salvas no banco de dados com base na sua chave de jogador única abaixo.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-2 min-w-[280px]">
+              {editingUserId ? (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={tempUserId}
+                    onChange={(e) => setTempUserId(e.target.value)}
+                    placeholder="Cole seu ID (UUID) aqui"
+                    className="flex-1 bg-base border border-surface-light rounded-lg px-2.5 py-1.5 text-xs text-parchment placeholder-parchment-dim/40 focus:border-gold outline-none"
+                  />
+                  <button
+                    onClick={handleSaveUserId}
+                    className="px-3 py-1.5 bg-gold text-base text-xs font-semibold rounded-lg hover:bg-gold-dim transition-all cursor-pointer"
+                  >
+                    Salvar
+                  </button>
+                  <button
+                    onClick={() => setEditingUserId(false)}
+                    className="px-2 py-1.5 bg-surface-light border border-surface-light text-parchment rounded-lg text-xs hover:text-gold transition-all cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between gap-2 bg-base border border-surface-light rounded-lg px-3 py-1.5">
+                  <div className="min-w-0 flex-1">
+                    <span className="text-[10px] text-parchment-dim block select-none">Chave de Jogador (ID)</span>
+                    <span className="font-mono text-xs text-gold truncate block" title={currentUserId}>
+                      {currentUserId}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      onClick={handleCopy}
+                      className="p-1 rounded text-parchment-dim hover:text-gold hover:bg-surface-light transition-all cursor-pointer"
+                      title={copied ? "Copiado!" : "Copiar Chave"}
+                    >
+                      {copied ? "✓" : "📋"}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setTempUserId(currentUserId);
+                        setEditingUserId(true);
+                      }}
+                      className="p-1 rounded text-parchment-dim hover:text-gold hover:bg-surface-light transition-all cursor-pointer"
+                      title="Importar/Alterar Chave"
+                    >
+                      ✏️
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
 
         {/* Player section */}
         <SheetSection

@@ -34,6 +34,7 @@ export const characterSchema: RxJsonSchema<Record<string, unknown>> = {
     criadoEm:           { type: 'string' },
     atualizadoEm:       { type: 'string' },
     _modified:          { type: 'string', maxLength: 100 },
+    user_id:            { type: 'string', maxLength: 100 },
   },
   required: ['id', 'nome', 'ranque'],
   indexes: ['atualizadoEm', '_modified'],
