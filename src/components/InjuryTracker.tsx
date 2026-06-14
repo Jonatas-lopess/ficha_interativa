@@ -2,7 +2,7 @@ import { useState, useCallback, memo } from "react";
 import SectionHeader from "./SectionHeader";
 import { HeartPulseIcon } from "./Icons";
 import { Lesoes, RankData, LesaoDescricao } from "../types";
-import { useSheetStore } from "../store/sheetStore";
+import { useActiveSheetStore } from "../store/activeSheetStore";
 
 const CATEGORIAS: Array<{ key: keyof Lesoes; label: string; icon: string }> = [
   { key: "fisicas", label: "Físicas", icon: "⚔" },
@@ -11,9 +11,9 @@ const CATEGORIAS: Array<{ key: keyof Lesoes; label: string; icon: string }> = [
 ];
 
 const InjuryTracker = memo(function InjuryTracker() {
-  const lesoes = useSheetStore((s) => s.character?.lesoes);
-  const rankData = useSheetStore((s) => s.rankData);
-  const updateField = useSheetStore((s) => s.updateField);
+  const lesoes = useActiveSheetStore((s) => s.character?.lesoes);
+  const rankData = useActiveSheetStore((s) => s.rankData);
+  const updateField = useActiveSheetStore((s) => s.updateField);
 
   // Track which injury description is being edited
   const [editing, setEditing] = useState<{

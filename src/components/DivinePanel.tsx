@@ -17,7 +17,7 @@ import {
   DivineSkill,
 } from "../types";
 import { traitCatalogRepo, skillRepo } from "../repository";
-import { useSheetStore, useShallow } from "../store/sheetStore";
+import { useActiveSheetStore, useShallow } from "../store/activeSheetStore";
 
 const STAGE_ORDER: SaturacaoEstagio[] = [
   "Centelha",
@@ -42,14 +42,14 @@ function getEffectTypes(traco: Traco): TipoEfeito[] {
 }
 
 const DivinePanel = memo(function DivinePanel() {
-  const { divino, ranque } = useSheetStore(
+  const { divino, ranque } = useActiveSheetStore(
     useShallow((s) => ({
       divino: s.character?.divino,
       ranque: s.character?.ranque as RanqueNome | undefined,
     })),
   );
-  const updateNestedField = useSheetStore((s) => s.updateNestedField);
-  const syncDivineAbilities = useSheetStore((s) => s.syncDivineAbilities);
+  const updateNestedField = useActiveSheetStore((s) => s.updateNestedField);
+  const syncDivineAbilities = useActiveSheetStore((s) => s.syncDivineAbilities);
 
   const [dbTraits, setDbTraits] = useState<DivineTrait[]>([]);
   const [dbSkills, setDbSkills] = useState<DivineSkill[]>([]);

@@ -1,6 +1,7 @@
 import { useEffect, useCallback, useState } from "react";
 import { characterRepo } from "./repository";
-import { useSheetStore, useShallow } from "./store/sheetStore";
+import { useRegistryStore } from "./store/registryStore";
+import { useActiveSheetStore, useShallow } from "./store/activeSheetStore";
 import HomePage from "./components/HomePage";
 import CompleteSheet from "./components/CompleteSheet";
 import SimplifiedSheet from "./components/SimplifiedSheet";
@@ -18,11 +19,11 @@ const CATALOG_TARGET_KEY = "__catalog_target_sheet__";
 // ─── SimplifiedSheetView ─────────────────────────────────────────────────────
 
 function SimplifiedSheetView({ onBack }: { onBack: () => void }) {
-  const character = useSheetStore((s) => s.character);
-  const toggleEstresse = useSheetStore((s) => s.toggleEstresse);
-  const adjustEstresse = useSheetStore((s) => s.adjustEstresse);
-  const updateField = useSheetStore((s) => s.updateField);
-  const exportCharacter = useSheetStore((s) => s.exportCharacter);
+  const character = useActiveSheetStore((s) => s.character);
+  const toggleEstresse = useActiveSheetStore((s) => s.toggleEstresse);
+  const adjustEstresse = useActiveSheetStore((s) => s.adjustEstresse);
+  const updateField = useActiveSheetStore((s) => s.updateField);
+  const exportCharacter = useActiveSheetStore((s) => s.exportCharacter);
 
   const [localNome, setLocalNome] = useState<string | null>(null);
 
@@ -101,8 +102,8 @@ function CharacterView({
   onBack: () => void;
   onOpenCatalog?: () => void;
 }) {
-  const setActiveId = useSheetStore((s) => s.setActiveId);
-  const { character, loadingCharacter } = useSheetStore(
+  const setActiveId = useActiveSheetStore((s) => s.setActiveId);
+  const { character, loadingCharacter } = useActiveSheetStore(
     useShallow((s) => ({
       character: s.character,
       loadingCharacter: s.loadingCharacter,
@@ -111,10 +112,6 @@ function CharacterView({
 
   useEffect(() => {
     setActiveId(sheetId);
-    return () => {
-      // Clear active character on unmount so stale data doesn't show on back
-      setActiveId(null);
-    };
   }, [sheetId]);
 
   if (loadingCharacter || !character) {
@@ -166,18 +163,18 @@ function CharacterViewRoute() {
 function App() {
   const [, navigate] = useHashLocation();
 
-  const { registry, loadingRegistry } = useSheetStore(
+  const { registry, loadingRegistry } = useRegistryStore(
     useShallow((s) => ({
       registry: s.registry,
       loadingRegistry: s.loadingRegistry,
     })),
   );
-  const loadRegistry = useSheetStore((s) => s.loadRegistry);
-  const createSheet = useSheetStore((s) => s.createSheet);
-  const importSheet = useSheetStore((s) => s.importSheet);
-  const deleteSheet = useSheetStore((s) => s.deleteSheet);
-  const duplicateSheet = useSheetStore((s) => s.duplicateSheet);
-  const addTraitFromCatalog = useSheetStore((s) => s.addTraitFromCatalog);
+  const loadRegistry = useRegistryStore((s) => s.loadRegistry);
+  const createSheet = useRegistryStore((s) => s.createSheet);
+  const importSheet = useRegistryStore((s) => s.importSheet);
+  const deleteSheet = useRegistryStore((s) => s.deleteSheet);
+  const duplicateSheet = useRegistryStore((s) => s.duplicateSheet);
+  const addTraitFromCatalog = useActiveSheetStore((s) => s.addTraitFromCatalog);
 
   // Load registry on mount
   useEffect(() => {
@@ -272,8 +269,7 @@ function App() {
     async (traco: Traco) => {
       const targetId = sessionStorage.getItem(CATALOG_TARGET_KEY);
       if (!targetId) return;
-      // addTraitFromCatalog reads from in-memory store state — no DB race
-      addTraitFromCatalog(traco);
+      await addTraitFromCatalog(traco, targetId);
       sessionStorage.removeItem(CATALOG_TARGET_KEY);
       navigate(`/sheet/${targetId}`);
     },

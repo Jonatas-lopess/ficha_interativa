@@ -1,11 +1,11 @@
 import { useState, memo } from "react";
 import SectionHeader from "./SectionHeader";
 import { BookOpenIcon } from "./Icons";
-import { useSheetStore } from "../store/sheetStore";
+import { useActiveSheetStore } from "../store/activeSheetStore";
 
 const StoryPanel = memo(function StoryPanel() {
-  const character = useSheetStore((s) => s.character);
-  const updateField = useSheetStore((s) => s.updateField);
+  const character = useActiveSheetStore((s) => s.character);
+  const updateField = useActiveSheetStore((s) => s.updateField);
 
   const [frase, setFrase] = useState("");
   const [objetivo, setObjetivo] = useState("");

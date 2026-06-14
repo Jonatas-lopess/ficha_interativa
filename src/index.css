@@ -3,60 +3,95 @@
 @tailwind utilities;
 
 @layer base {
-  html {
-    scroll-behavior: smooth;
-    scroll-padding-top: 1.5rem;
-  }
+    html {
+        scroll-behavior: smooth;
+        scroll-padding-top: 1.5rem;
+    }
 
-  body {
-    @apply bg-base text-parchment font-body antialiased;
-    min-height: 100vh;
-  }
+    body {
+        @apply bg-base text-parchment font-body antialiased;
+        min-height: 100vh;
+    }
 
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-title;
-  }
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        @apply font-title;
+    }
 
-  /* Scrollbar styling */
-  ::-webkit-scrollbar {
-    width: 6px;
-  }
-  ::-webkit-scrollbar-track {
-    @apply bg-base;
-  }
-  ::-webkit-scrollbar-thumb {
-    @apply bg-surface-light rounded-full;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    @apply bg-gold-dim;
-  }
-  /* Native select/option dark theme */
-  select {
-    @apply bg-base text-parchment;
-  }
-  option {
-    @apply bg-base text-parchment;
-  }
-  option:checked {
-    background: #1a1a28;
-  }
+    /* Scrollbar styling */
+    ::-webkit-scrollbar {
+        width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+        @apply bg-base;
+    }
+    ::-webkit-scrollbar-thumb {
+        @apply bg-surface-light rounded-full;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        @apply bg-gold-dim;
+    }
+    /* Native select/option dark theme */
+    select {
+        @apply bg-base text-parchment;
+    }
+    option {
+        @apply bg-base text-parchment;
+    }
+    option:checked {
+        background: #1a1a28;
+    }
+
+    /* Remove autofill styles */
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus,
+    textarea:-webkit-autofill,
+    textarea:-webkit-autofill:hover,
+    textarea:-webkit-autofill:focus,
+    select:-webkit-autofill,
+    select:-webkit-autofill:hover,
+    select:-webkit-autofill:focus {
+        -webkit-text-fill-color: #e8e0d0; /* matches parchment text */
+        -webkit-box-shadow: 0 0 0px 1000px #0a0a0f inset; /* matches base background */
+        transition: background-color 5000s ease-in-out 0s;
+    }
 }
 
 /* Toast timer bar animation */
 @keyframes shrink {
-  from { width: 100%; }
-  to { width: 0%; }
+    from {
+        width: 100%;
+    }
+    to {
+        width: 0%;
+    }
 }
 
 /* Tab content fade-in */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 .animate-fadeIn {
-  animation: fadeIn 0.2s ease-out;
+    animation: fadeIn 0.2s ease-out;
 }
 
 /* Hide scrollbar but keep scroll */
-.no-scrollbar::-webkit-scrollbar { display: none; }
-.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}

@@ -5,21 +5,21 @@ import SectionHeader from "./SectionHeader";
 import { UserIcon } from "./Icons";
 import { RanqueNome } from "../types";
 import { isSupabaseConfigured } from "../db/supabaseClient";
-import { useSheetStore, useShallow } from "../store/sheetStore";
+import { useActiveSheetStore, useShallow } from "../store/activeSheetStore";
 
 const Header = memo(function Header() {
-  const { character, onlineSaveStatus } = useSheetStore(
+  const { character, onlineSaveStatus } = useActiveSheetStore(
     useShallow((s) => ({
       character: s.character,
       onlineSaveStatus: s.onlineSaveStatus,
     })),
   );
-  const updateField = useSheetStore((s) => s.updateField);
-  const updateRanque = useSheetStore((s) => s.updateRanque);
-  const exportCharacter = useSheetStore((s) => s.exportCharacter);
-  const importCharacter = useSheetStore((s) => s.importCharacter);
-  const resetCharacter = useSheetStore((s) => s.resetCharacter);
-  const salvarOnline = useSheetStore((s) => s.salvarOnline);
+  const updateField = useActiveSheetStore((s) => s.updateField);
+  const updateRanque = useActiveSheetStore((s) => s.updateRanque);
+  const exportCharacter = useActiveSheetStore((s) => s.exportCharacter);
+  const importCharacter = useActiveSheetStore((s) => s.importCharacter);
+  const resetCharacter = useActiveSheetStore((s) => s.resetCharacter);
+  const salvarOnline = useActiveSheetStore((s) => s.salvarOnline);
 
   // Local state for text inputs — persisted on blur
   const [localNome, setLocalNome] = useState<string | null>(null);

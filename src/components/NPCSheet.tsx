@@ -5,16 +5,16 @@ import ProficiencyList from "./ProficiencyList";
 import TraitCard from "./TraitCard";
 import InventoryList from "./InventoryList";
 import { RanqueNome } from "../types";
-import { useSheetStore } from "../store/sheetStore";
+import { useActiveSheetStore } from "../store/activeSheetStore";
 
 interface Props {
   onBack?: () => void;
 }
 
 export default function NPCSheet({ onBack }: Props) {
-  const character = useSheetStore((s) => s.character);
-  const updateField = useSheetStore((s) => s.updateField);
-  const exportCharacter = useSheetStore((s) => s.exportCharacter);
+  const character = useActiveSheetStore((s) => s.character);
+  const updateField = useActiveSheetStore((s) => s.updateField);
+  const exportCharacter = useActiveSheetStore((s) => s.exportCharacter);
 
   // Blur-save for text fields
   const [localNome, setLocalNome] = useState<string | null>(null);

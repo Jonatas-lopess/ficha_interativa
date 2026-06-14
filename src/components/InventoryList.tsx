@@ -2,11 +2,11 @@ import { useState, memo } from "react";
 import SectionHeader from "./SectionHeader";
 import { BackpackIcon } from "./Icons";
 import { Equipamento } from "../types";
-import { useSheetStore } from "../store/sheetStore";
+import { useActiveSheetStore } from "../store/activeSheetStore";
 
 const InventoryList = memo(function InventoryList() {
-  const equipamentos = useSheetStore((s) => s.character?.equipamentos ?? []);
-  const updateField = useSheetStore((s) => s.updateField);
+  const equipamentos = useActiveSheetStore((s) => s.character?.equipamentos ?? []);
+  const updateField = useActiveSheetStore((s) => s.updateField);
 
   const onUpdate = (next: Equipamento[]) => updateField("equipamentos", next);
 

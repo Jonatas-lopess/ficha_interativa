@@ -2,7 +2,7 @@ import { memo } from "react";
 import SectionHeader from "./SectionHeader";
 import { SparklesIcon } from "./Icons";
 import { EstresseEstado } from "../types";
-import { useSheetStore } from "../store/sheetStore";
+import { useActiveSheetStore } from "../store/activeSheetStore";
 
 const STATE_STYLES: Record<EstresseEstado, string> = {
   livre: "bg-stress-free border-stress-free/50 hover:border-parchment-dim",
@@ -20,9 +20,9 @@ const STATE_LABELS: Record<EstresseEstado, string> = {
 
 
 const StressBar = memo(function StressBar() {
-  const estresse = useSheetStore((s) => s.character?.estresse ?? []);
-  const toggleEstresse = useSheetStore((s) => s.toggleEstresse);
-  const adjustEstresse = useSheetStore((s) => s.adjustEstresse);
+  const estresse = useActiveSheetStore((s) => s.character?.estresse ?? []);
+  const toggleEstresse = useActiveSheetStore((s) => s.toggleEstresse);
+  const adjustEstresse = useActiveSheetStore((s) => s.adjustEstresse);
 
   const gastos = estresse.filter((s) => s === "gasto").length;
   const corrompidos = estresse.filter((s) => s === "corrompido").length;

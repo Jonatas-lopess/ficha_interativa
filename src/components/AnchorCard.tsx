@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Ancora } from "../types";
-import { useSheetStore } from "../store/sheetStore";
+import { useActiveSheetStore } from "../store/activeSheetStore";
 
 export default function AnchorCard() {
-  const ancoras = useSheetStore((s) => s.character?.divino?.ancoras ?? []);
-  const updateNestedField = useSheetStore((s) => s.updateNestedField);
+  const ancoras = useActiveSheetStore((s) => s.character?.divino?.ancoras ?? []);
+  const updateNestedField = useActiveSheetStore((s) => s.updateNestedField);
 
   const onUpdate = (next: Ancora[]) => updateNestedField("divino", "ancoras", next);
   const [adding, setAdding] = useState(false);

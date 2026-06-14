@@ -1,5 +1,5 @@
 /**
- * @deprecated Superseded by `useSheetStore` (Zustand). Safe to delete once
+ * @deprecated Superseded by `useActiveSheetStore` (Zustand). Safe to delete once
  * all call sites are confirmed removed. No active usages remain in App.tsx.
  */
 import { useCallback, useEffect, useState, useRef } from "react";

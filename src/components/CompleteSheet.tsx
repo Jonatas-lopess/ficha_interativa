@@ -9,7 +9,7 @@ import DivinePanel from "./DivinePanel";
 import InventoryList from "./InventoryList";
 import StoryPanel from "./StoryPanel";
 import FloatingDiceRoller from "./FloatingDiceRoller";
-import { useSheetStore } from "../store/sheetStore";
+import { useActiveSheetStore } from "../store/activeSheetStore";
 
 type TabId = "identidade" | "combate" | "tracos" | "inventario" | "divino";
 
@@ -34,7 +34,7 @@ interface Props {
 }
 
 export default function CompleteSheet({ onBack, onOpenCatalog }: Props) {
-  const ranque = useSheetStore((s) => s.character?.ranque);
+  const ranque = useActiveSheetStore((s) => s.character?.ranque);
   const [activeTab, setActiveTab] = useState<TabId>("identidade");
 
   const canHaveDivine = ranque !== "Humano" && ranque !== undefined;

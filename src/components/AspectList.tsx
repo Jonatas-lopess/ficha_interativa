@@ -1,6 +1,6 @@
 import { useState, memo } from "react";
 import SectionHeader from "./SectionHeader";
-import { useSheetStore } from "../store/sheetStore";
+import { useActiveSheetStore } from "../store/activeSheetStore";
 
 // Diamond/gem icon — evokes identity facets
 const AspectIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
@@ -21,8 +21,8 @@ const AspectIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
 );
 
 const AspectList = memo(function AspectList() {
-  const aspectos = useSheetStore((s) => s.character?.aspectos ?? []);
-  const updateField = useSheetStore((s) => s.updateField);
+  const aspectos = useActiveSheetStore((s) => s.character?.aspectos ?? []);
+  const updateField = useActiveSheetStore((s) => s.updateField);
 
   const onUpdate = (next: string[]) => updateField("aspectos", next);
   const [novoAspecto, setNovoAspecto] = useState("");

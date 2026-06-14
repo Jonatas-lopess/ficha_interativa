@@ -4,7 +4,7 @@ import SectionHeader from "./SectionHeader";
 import { SparklesIcon } from "./Icons";
 import { Traco, TipoEfeito, OrigemTraco, Efeito } from "../types";
 import { MarkdownText } from "./MarkdownText";
-import { useSheetStore } from "../store/sheetStore";
+import { useActiveSheetStore } from "../store/activeSheetStore";
 
 const EFEITO_BADGES: Record<TipoEfeito, string> = {
   Passivo: "bg-gold/10 text-gold-dim",
@@ -43,8 +43,8 @@ const TraitCard = memo(function TraitCard({
   color = "text-gold",
   onOpenCatalog,
 }: Props) {
-  const tracos = useSheetStore((s) => s.character?.tracos ?? []);
-  const updateField = useSheetStore((s) => s.updateField);
+  const tracos = useActiveSheetStore((s) => s.character?.tracos ?? []);
+  const updateField = useActiveSheetStore((s) => s.updateField);
 
   const onUpdate = (next: Traco[]) => updateField("tracos", next);
 

@@ -2,17 +2,12 @@ import { create } from "zustand";
 import { useShallow } from "zustand/shallow";
 import {
   Character,
-  SheetRegistryEntry,
-  SheetTipo,
   RanqueNome,
   Traco,
-  Ancora,
   EstresseEstado,
   DivineTrait,
   DivineSkill,
   RankData,
-  Lesoes,
-  LesaoDescricao,
   Equipamento,
 } from "../types";
 import { characterRepo } from "../repository";
@@ -21,37 +16,14 @@ import { RANQUES } from "../data/rankData";
 import { supabase, isSupabaseConfigured } from "../db/supabaseClient";
 import { getOrGenerateUserId } from "../utils/userId";
 import type { Persisted } from "../repository/persistenceTypes";
+import { useRegistryStore } from "./registryStore";
 
 export type OnlineSaveStatus = "idle" | "saving" | "success" | "error";
 
 // Re-export useShallow for convenient use in components
 export { useShallow };
 
-// ─── ID helpers ─────────────────────────────────────────────────────────────
-
-function generateId(): string {
-  return (
-    "character_" +
-    Date.now().toString(36) +
-    Math.random().toString(36).slice(2, 7)
-  );
-}
-
-// ─── Store interface ─────────────────────────────────────────────────────────
-
-interface SheetStore {
-  // ── Registry ──────────────────────────────────────────────────────────────
-  registry: SheetRegistryEntry[];
-  loadingRegistry: boolean;
-
-  loadRegistry: () => Promise<void>;
-  createSheet: (tipo?: SheetTipo) => Promise<string>;
-  importSheet: (data: Partial<Character>) => Promise<string>;
-  deleteSheet: (id: string) => Promise<void>;
-  duplicateSheet: (id: string) => Promise<string | null>;
-  syncRegistryEntry: (id: string, nome: string) => void;
-
-  // ── Active Character ───────────────────────────────────────────────────────
+interface ActiveSheetStore {
   activeId: string | null;
   character: Persisted<Character> | null;
   rankData: RankData;
@@ -71,31 +43,27 @@ interface SheetStore {
   exportCharacter: () => void;
   importCharacter: (jsonString: string) => { success: boolean; error?: string };
   resetCharacter: () => void;
-  addTraitFromCatalog: (traco: Traco) => void;
+  addTraitFromCatalog: (traco: Traco, targetId?: string) => Promise<void>;
   salvarOnline: () => Promise<void>;
 
-  // Atomic divine sync — replaces 3-callback cascade in DivinePanel
+  // Atomic divine sync
   syncDivineAbilities: (dbTraits: DivineTrait[], dbSkills: DivineSkill[]) => void;
 }
 
-// ─── Module-level save queue (avoids storing timeout in state) ───────────────
-
 let _saveTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
-function scheduleSave(char: Persisted<Character>, syncEntry: (id: string, nome: string) => void) {
+function scheduleSave(char: Persisted<Character>) {
   if (_saveTimeoutId) clearTimeout(_saveTimeoutId);
   _saveTimeoutId = setTimeout(async () => {
     _saveTimeoutId = null;
     try {
       await characterRepo.save(char);
-      syncEntry(char.id, char.nome);
+      useRegistryStore.getState().syncRegistryEntry(char.id, char.nome);
     } catch (e) {
-      console.error("[sheetStore] Auto-save failed:", e);
+      console.error("[activeSheetStore] Auto-save failed:", e);
     }
   }, 300); // short debounce only to batch rapid discrete actions
 }
-
-// ─── Migrations ──────────────────────────────────────────────────────────────
 
 function applyMigrations(loaded: Persisted<Character>): [Persisted<Character>, boolean] {
   let char = loaded;
@@ -137,114 +105,7 @@ function applyMigrations(loaded: Persisted<Character>): [Persisted<Character>, b
   return [char, dirty];
 }
 
-// ─── Store ───────────────────────────────────────────────────────────────────
-
-export const useSheetStore = create<SheetStore>((set, get) => ({
-  // ── Registry ────────────────────────────────────────────────────────────────
-  registry: [],
-  loadingRegistry: true,
-
-  loadRegistry: async () => {
-    set({ loadingRegistry: true });
-    try {
-      const allChars = await characterRepo.findAll();
-      const registry: SheetRegistryEntry[] = allChars.map((c) => ({
-        id: c.id,
-        nome: c.nome || "",
-        tipo: c.tipo || "completa",
-        criadoEm: c.criadoEm || new Date().toISOString(),
-        atualizadoEm: c.atualizadoEm || new Date().toISOString(),
-      }));
-      registry.sort(
-        (a, b) => new Date(b.atualizadoEm).getTime() - new Date(a.atualizadoEm).getTime(),
-      );
-      set({ registry, loadingRegistry: false });
-    } catch (e) {
-      console.error("[sheetStore] loadRegistry failed:", e);
-      set({ loadingRegistry: false });
-    }
-  },
-
-  createSheet: async (tipo = "completa") => {
-    const id = generateId();
-    const character: Character = { ...createDefaultCharacter(), tipo };
-    const entry: SheetRegistryEntry = {
-      id,
-      nome: "",
-      tipo,
-      criadoEm: character.criadoEm,
-      atualizadoEm: character.atualizadoEm,
-    };
-    set((s) => ({ registry: [entry, ...s.registry] }));
-    await characterRepo.save({ ...character, id });
-    await get().loadRegistry();
-    return id;
-  },
-
-  importSheet: async (data) => {
-    const id = generateId();
-    const character: Character = { ...createDefaultCharacter(), ...data };
-    const entry: SheetRegistryEntry = {
-      id,
-      nome: character.nome || "",
-      tipo: character.tipo || "completa",
-      criadoEm: character.criadoEm || new Date().toISOString(),
-      atualizadoEm: new Date().toISOString(),
-    };
-    set((s) => ({ registry: [entry, ...s.registry] }));
-    await characterRepo.save({ ...character, id });
-    await get().loadRegistry();
-    return id;
-  },
-
-  deleteSheet: async (id) => {
-    set((s) => ({ registry: s.registry.filter((e) => e.id !== id) }));
-    try {
-      await characterRepo.remove(id);
-    } catch (e) {
-      console.error("[sheetStore] deleteSheet failed:", e);
-      await get().loadRegistry();
-    }
-  },
-
-  duplicateSheet: async (id) => {
-    const entry = get().registry.find((r) => r.id === id);
-    if (!entry) return null;
-    const novoId = generateId();
-    try {
-      const original = await characterRepo.findById(id);
-      const duplicada: Character = {
-        ...original,
-        nome: original.nome ? `${original.nome} (cópia)` : "",
-        criadoEm: new Date().toISOString(),
-        atualizadoEm: new Date().toISOString(),
-      };
-      const newEntry: SheetRegistryEntry = {
-        id: novoId,
-        nome: duplicada.nome,
-        tipo: entry.tipo,
-        criadoEm: duplicada.criadoEm,
-        atualizadoEm: duplicada.atualizadoEm,
-      };
-      set((s) => ({ registry: [newEntry, ...s.registry] }));
-      await characterRepo.save({ ...duplicada, id: novoId });
-      await get().loadRegistry();
-      return novoId;
-    } catch (e) {
-      console.error("[sheetStore] duplicateSheet failed:", e);
-      return null;
-    }
-  },
-
-  syncRegistryEntry: (id, nome) => {
-    set((s) => ({
-      registry: s.registry.map((e) =>
-        e.id === id ? { ...e, nome, atualizadoEm: new Date().toISOString() } : e,
-      ),
-    }));
-  },
-
-  // ── Active Character ────────────────────────────────────────────────────────
+export const useActiveSheetStore = create<ActiveSheetStore>((set, get) => ({
   activeId: null,
   character: null,
   rankData: RANQUES.Humano,
@@ -262,9 +123,9 @@ export const useSheetStore = create<SheetStore>((set, get) => ({
       const [migrated, dirty] = applyMigrations(loaded);
       const rankData = RANQUES[migrated.ranque as RanqueNome] || RANQUES.Humano;
       set({ character: migrated, rankData, loadingCharacter: false });
-      if (dirty) scheduleSave(migrated, get().syncRegistryEntry);
+      if (dirty) scheduleSave(migrated);
     } catch (e) {
-      console.warn("[sheetStore] setActiveId — not found, using default", e);
+      console.warn("[activeSheetStore] setActiveId — not found, using default", e);
       const def: Persisted<Character> = { ...createDefaultCharacter(), id };
       set({ character: def, rankData: RANQUES.Humano, loadingCharacter: false });
     }
@@ -283,7 +144,7 @@ export const useSheetStore = create<SheetStore>((set, get) => ({
         ? RANQUES[value as RanqueNome] || RANQUES.Humano
         : get().rankData;
     set({ character: next, rankData });
-    scheduleSave(next, get().syncRegistryEntry);
+    scheduleSave(next);
   },
 
   updateNestedField: (parent, field, value) => {
@@ -295,7 +156,7 @@ export const useSheetStore = create<SheetStore>((set, get) => ({
       atualizadoEm: new Date().toISOString(),
     };
     set({ character: next });
-    scheduleSave(next, get().syncRegistryEntry);
+    scheduleSave(next);
   },
 
   updateRanque: (novoRanque) => {
@@ -322,7 +183,7 @@ export const useSheetStore = create<SheetStore>((set, get) => ({
       atualizadoEm: new Date().toISOString(),
     };
     set({ character: next, rankData: novoRankData });
-    scheduleSave(next, get().syncRegistryEntry);
+    scheduleSave(next);
   },
 
   toggleEstresse: (index) => {
@@ -337,7 +198,7 @@ export const useSheetStore = create<SheetStore>((set, get) => ({
       atualizadoEm: new Date().toISOString(),
     };
     set({ character: next });
-    scheduleSave(next, get().syncRegistryEntry);
+    scheduleSave(next);
   },
 
   adjustEstresse: (delta) => {
@@ -370,7 +231,7 @@ export const useSheetStore = create<SheetStore>((set, get) => ({
       atualizadoEm: new Date().toISOString(),
     };
     set({ character: next });
-    scheduleSave(next, get().syncRegistryEntry);
+    scheduleSave(next);
   },
 
   exportCharacter: () => {
@@ -401,7 +262,7 @@ export const useSheetStore = create<SheetStore>((set, get) => ({
       };
       const rankData = RANQUES[merged.ranque as RanqueNome] || RANQUES.Humano;
       set({ character: merged, rankData });
-      scheduleSave(merged, get().syncRegistryEntry);
+      scheduleSave(merged);
       return { success: true };
     } catch (e: any) {
       return { success: false, error: e.message };
@@ -416,22 +277,38 @@ export const useSheetStore = create<SheetStore>((set, get) => ({
       id: character.id,
     };
     set({ character: next, rankData: RANQUES.Humano });
-    scheduleSave(next, get().syncRegistryEntry);
+    scheduleSave(next);
   },
 
-  addTraitFromCatalog: (traco) => {
-    const { character } = get();
-    if (!character) return;
+  addTraitFromCatalog: async (traco, targetId) => {
+    let char = get().character;
+    const activeId = get().activeId;
+    const currentId = targetId || activeId;
+
+    if (!char || (currentId && char.id !== currentId)) {
+      if (currentId) {
+        try {
+          char = await characterRepo.findById(currentId);
+        } catch (e) {
+          console.error("[activeSheetStore] addTraitFromCatalog failed to find character:", e);
+          return;
+        }
+      }
+    }
+
+    if (!char) return;
     const next: Persisted<Character> = {
-      ...character,
-      tracos: [...(character.tracos ?? []), traco],
+      ...char,
+      tracos: [...(char.tracos ?? []), traco],
       atualizadoEm: new Date().toISOString(),
     };
-    set({ character: next });
-    // Immediate save — no debounce to avoid race with stale DB read
-    characterRepo.save(next).then(() => {
-      get().syncRegistryEntry(next.id, next.nome);
-    });
+
+    if (get().activeId === next.id) {
+      set({ character: next });
+    }
+
+    await characterRepo.save(next);
+    useRegistryStore.getState().syncRegistryEntry(next.id, next.nome);
   },
 
   salvarOnline: async () => {
@@ -457,7 +334,7 @@ export const useSheetStore = create<SheetStore>((set, get) => ({
       set({ onlineSaveStatus: "success" });
       setTimeout(() => set({ onlineSaveStatus: "idle" }), 2500);
     } catch (err) {
-      console.error("[sheetStore] salvarOnline failed:", err);
+      console.error("[activeSheetStore] salvarOnline failed:", err);
       set({ onlineSaveStatus: "error" });
       setTimeout(() => set({ onlineSaveStatus: "idle" }), 3000);
     }
@@ -579,6 +456,6 @@ export const useSheetStore = create<SheetStore>((set, get) => ({
     };
 
     set({ character: next });
-    scheduleSave(next, get().syncRegistryEntry);
+    scheduleSave(next);
   },
 }));
