@@ -3,6 +3,8 @@ import { importarDeArquivo } from "../utils/exportImport";
 import { SheetRegistryEntry, SheetTipo } from "../types";
 import { getOrGenerateUserId, setUserId } from "../utils/userId";
 import { isSupabaseConfigured } from "../db/supabaseClient";
+import { useOnlineSave } from "../hooks/useOnlineSave";
+import { characterRepo } from "../repository";
 
 // ---------------------------------------------------------------------------
 // ActionCard
@@ -66,6 +68,22 @@ function SheetCard({
   onExport,
 }: SheetCardProps) {
   const [showMenu, setShowMenu] = useState(false);
+  const { salvarOnline, status: onlineSaveStatus } = useOnlineSave();
+
+  const handleOnlineSave = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const fullCharacter = await characterRepo.findById(entry.id);
+      if (fullCharacter) {
+        await salvarOnline(fullCharacter);
+      }
+    } catch (err) {
+      console.error(
+        "[SheetCard] Erro ao buscar ficha para salvar online:",
+        err,
+      );
+    }
+  };
 
   const tipoLabel =
     entry.tipo === "completa"
@@ -155,23 +173,90 @@ function SheetCard({
                   ↓ Exportar JSON
                 </button>
                 <button
-                  disabled
-                  className="w-full text-left px-3 py-2 text-xs text-parchment-dim/30 cursor-not-allowed flex items-center gap-2"
-                  title="Requer integração com PouchDB remoto"
+                  onClick={handleOnlineSave}
+                  disabled={
+                    !isSupabaseConfigured || onlineSaveStatus === "saving"
+                  }
+                  className={`w-full text-left px-3 py-2 text-xs flex items-center gap-2 transition-colors ${
+                    !isSupabaseConfigured || onlineSaveStatus === "saving"
+                      ? "text-parchment-dim/30 cursor-not-allowed"
+                      : "text-parchment hover:bg-surface-hover cursor-pointer"
+                  }`}
+                  title={
+                    !isSupabaseConfigured
+                      ? "Sincronização Online não configurada"
+                      : "Salvar esta ficha na nuvem"
+                  }
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="w-3 h-3 shrink-0"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" />
-                  </svg>
-                  Salvar Online
+                  {onlineSaveStatus === "saving" ? (
+                    <svg
+                      className="w-3 h-3 animate-spin text-gold"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                  ) : onlineSaveStatus === "success" ? (
+                    <svg
+                      className="w-3 h-3 text-green-500"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                  ) : onlineSaveStatus === "error" ? (
+                    <svg
+                      className="w-3 h-3 text-red-500"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  ) : (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="w-3 h-3 shrink-0"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" />
+                    </svg>
+                  )}
+                  {onlineSaveStatus === "saving" && "Salvando..."}
+                  {onlineSaveStatus === "success" && "Salvo!"}
+                  {onlineSaveStatus === "error" && "Erro ao Salvar"}
+                  {onlineSaveStatus === "idle" && "Salvar Online"}
                 </button>
                 <hr className="border-surface-light my-1" />
                 <button

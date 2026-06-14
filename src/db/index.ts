@@ -26,7 +26,7 @@ async function _createDb() {
   const storage = wrappedValidateAjvStorage({ storage: baseStorage });
 
   const db = await createRxDatabase({
-    name: 'rpg-db-v2',         // v2 to avoid collisions with old LocalStorageDriver keys
+    name: 'rpg-db-v3',         // v3 to apply updated schemas and avoid DB6 schema mismatch error
     storage,
     multiInstance: false,       // single tab — no broadcast channel overhead
   });
