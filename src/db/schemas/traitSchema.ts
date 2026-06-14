@@ -19,8 +19,6 @@ export const traitSchema: RxJsonSchema<Record<string, unknown>> = {
     saturacaoRequisito: { type: 'string' },
     criadoEm:           { type: 'string' },
     atualizadoEm:       { type: 'string' },
-    _modified:          { type: 'string', maxLength: 100 },
   },
   required: ['id', 'nome'],
-  indexes: ['_modified'],
 };

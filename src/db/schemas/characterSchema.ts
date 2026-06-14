@@ -32,10 +32,9 @@ export const characterSchema: RxJsonSchema<Record<string, unknown>> = {
     notas:              { type: 'string' },
     taticas:            { type: 'string' },
     criadoEm:           { type: 'string' },
-    atualizadoEm:       { type: 'string' },
-    _modified:          { type: 'string', maxLength: 100 },
+    atualizadoEm:       { type: 'string', maxLength: 100 },
     user_id:            { type: 'string', maxLength: 100 },
   },
   required: ['id', 'nome', 'ranque'],
-  indexes: ['atualizadoEm', '_modified'],
+  indexes: ['atualizadoEm'],
 };

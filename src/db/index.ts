@@ -1,6 +1,7 @@
 import { createRxDatabase, addRxPlugin } from 'rxdb';
 import { getRxStorageLocalstorage } from 'rxdb/plugins/storage-localstorage';
 import { RxDBMigrationSchemaPlugin } from 'rxdb/plugins/migration-schema';
+import { wrappedValidateAjvStorage } from 'rxdb/plugins/validate-ajv';
 import { characterSchema } from './schemas/characterSchema';
 import { threatSchema }    from './schemas/threatSchema';
 import { traitSchema }     from './schemas/traitSchema';
@@ -20,17 +21,20 @@ async function _createDb() {
     addRxPlugin(RxDBDevModePlugin);
   }
 
+  const baseStorage = getRxStorageLocalstorage();
+  const storage = wrappedValidateAjvStorage({ storage: baseStorage });
+
   const db = await createRxDatabase({
     name: 'rpg-db-v2',         // v2 to avoid collisions with old LocalStorageDriver keys
-    storage: getRxStorageLocalstorage(),
+    storage,
     multiInstance: false,       // single tab — no broadcast channel overhead
   });
 
   const migrationStrategies = {
-    1: (oldDoc: any) => ({
-      ...oldDoc,
-      _modified: oldDoc._modified || new Date().toISOString()
-    })
+    1: (oldDoc: any) => {
+      const { _modified, ...rest } = oldDoc;
+      return rest;
+    }
   };
 
   await db.addCollections({
