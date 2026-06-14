@@ -1,21 +1,25 @@
-import { characterRepo } from './repository'
-import { useSheetManager } from './hooks/useSheetManager'
-import { useCharacter } from './hooks/useCharacter'
-import HomePage from './components/HomePage'
-import CompleteSheet from './components/CompleteSheet'
-import SimplifiedSheet from './components/SimplifiedSheet'
-import NPCSheet from './components/NPCSheet'
-import CodiceAmeacas from './components/CodiceAmeacas'
-import CatalogoTracos from './components/CatalogoTracos'
-import { Character, Lesoes, LesaoDescricao, SheetTipo, Traco } from './types'
-import { createDefaultCharacter } from './data/defaultCharacter'
-import { Router, Switch, Route, useParams } from 'wouter'
-import { useHashLocation } from 'wouter/use-hash-location'
+import { characterRepo } from "./repository";
+import { useSheetManager } from "./hooks/useSheetManager";
+import { useCharacter } from "./hooks/useCharacter";
+import HomePage from "./components/HomePage";
+import CompleteSheet from "./components/CompleteSheet";
+import SimplifiedSheet from "./components/SimplifiedSheet";
+import NPCSheet from "./components/NPCSheet";
+import CodiceAmeacas from "./components/CodiceAmeacas";
+import CatalogoTracos from "./components/CatalogoTracos";
+import { Character, Lesoes, LesaoDescricao, SheetTipo, Traco } from "./types";
+import { createDefaultCharacter } from "./data/defaultCharacter";
+import { Router, Switch, Route, useParams } from "wouter";
+import { useHashLocation } from "wouter/use-hash-location";
+import { useCallback } from "react";
 
 // Wrapper for the simplified sheet when viewed standalone
 interface SimplifiedSheetViewProps {
   character: Character;
-  updateField: <K extends keyof Character>(field: K, value: Character[K]) => void;
+  updateField: <K extends keyof Character>(
+    field: K,
+    value: Character[K],
+  ) => void;
   toggleEstresse: (index: number) => void;
   adjustEstresse: (delta: number) => void;
   exportarFicha: () => void;
@@ -23,18 +27,29 @@ interface SimplifiedSheetViewProps {
 }
 
 // Session key used to signal catalog → sheet navigation
-const CATALOG_TARGET_KEY = '__catalog_target_sheet__';
+const CATALOG_TARGET_KEY = "__catalog_target_sheet__";
 
-function SimplifiedSheetView({ character, updateField, toggleEstresse, adjustEstresse, exportarFicha, onBack }: SimplifiedSheetViewProps) {
-  const handleUpdateInjury = (categoria: keyof Lesoes, severidade: 'leves' | 'graves' | 'criticas', valor: number | LesaoDescricao[]) => {
-    updateField('lesoes', {
+function SimplifiedSheetView({
+  character,
+  updateField,
+  toggleEstresse,
+  adjustEstresse,
+  exportarFicha,
+  onBack,
+}: SimplifiedSheetViewProps) {
+  const handleUpdateInjury = (
+    categoria: keyof Lesoes,
+    severidade: "leves" | "graves" | "criticas",
+    valor: number | LesaoDescricao[],
+  ) => {
+    updateField("lesoes", {
       ...character.lesoes,
       [categoria]: {
         ...character.lesoes[categoria],
         [severidade]: valor,
       },
-    })
-  }
+    });
+  };
 
   return (
     <div className="min-h-screen bg-base py-10 px-4 relative">
@@ -56,11 +71,13 @@ function SimplifiedSheetView({ character, updateField, toggleEstresse, adjustEst
         {/* Edit fields that are simplified */}
         <div className="bg-surface border border-surface-light rounded-xl p-4 space-y-4">
           <div>
-            <label className="block text-xs text-parchment-dim uppercase tracking-wider mb-1">Nome</label>
+            <label className="block text-xs text-parchment-dim uppercase tracking-wider mb-1">
+              Nome
+            </label>
             <input
               type="text"
               value={character.nome}
-              onChange={(e) => updateField('nome', e.target.value)}
+              onChange={(e) => updateField("nome", e.target.value)}
               className="w-full bg-base border border-surface-light rounded-lg px-3 py-2 text-sm text-parchment focus:border-gold outline-none"
               placeholder="Nome do NPC"
             />
@@ -76,7 +93,7 @@ function SimplifiedSheetView({ character, updateField, toggleEstresse, adjustEst
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 // Separate component for the actual character view to utilize hooks
@@ -87,7 +104,12 @@ interface CharacterViewProps {
   onOpenCatalog?: () => void;
 }
 
-function CharacterView({ sheetId, onBack, onSyncRegistry, onOpenCatalog }: CharacterViewProps) {
+function CharacterView({
+  sheetId,
+  onBack,
+  onSyncRegistry,
+  onOpenCatalog,
+}: CharacterViewProps) {
   const {
     character,
     rankData,
@@ -101,18 +123,20 @@ function CharacterView({ sheetId, onBack, onSyncRegistry, onOpenCatalog }: Chara
     resetarFicha,
     loading,
     salvarOnline,
-    onlineSaveStatus
-  } = useCharacter(sheetId, onSyncRegistry)
+    onlineSaveStatus,
+  } = useCharacter(sheetId, onSyncRegistry);
 
   if (loading) {
     return (
       <div className="min-h-screen bg-base flex items-center justify-center">
-        <div className="text-gold animate-pulse text-xl font-cinzel">Carregando Ficha...</div>
+        <div className="text-gold animate-pulse text-xl font-cinzel">
+          Carregando Ficha...
+        </div>
       </div>
-    )
+    );
   }
 
-  if (character.tipo === 'simplificada') {
+  if (character.tipo === "simplificada") {
     return (
       <SimplifiedSheetView
         character={character}
@@ -122,10 +146,10 @@ function CharacterView({ sheetId, onBack, onSyncRegistry, onOpenCatalog }: Chara
         exportarFicha={exportarFicha}
         onBack={onBack}
       />
-    )
+    );
   }
 
-  if (character.tipo === 'npc') {
+  if (character.tipo === "npc") {
     return (
       <NPCSheet
         character={character}
@@ -136,7 +160,7 @@ function CharacterView({ sheetId, onBack, onSyncRegistry, onOpenCatalog }: Chara
         exportarFicha={exportarFicha}
         onBack={onBack}
       />
-    )
+    );
   }
 
   return (
@@ -156,37 +180,37 @@ function CharacterView({ sheetId, onBack, onSyncRegistry, onOpenCatalog }: Chara
       onBack={onBack}
       onOpenCatalog={onOpenCatalog}
     />
-  )
+  );
 }
 
 function CharacterViewRoute({
-  sincronizarRegistro
+  sincronizarRegistro,
 }: {
   sincronizarRegistro: (id: string, nome: string) => void;
 }) {
-  const { id } = useParams<{ id: string }>()
-  const [, navigate] = useHashLocation()
+  const { id } = useParams<{ id: string }>();
+  const [, navigate] = useHashLocation();
 
-  if (!id) return null
+  if (!id) return null;
 
-  const handleOpenCatalog = () => {
+  const handleOpenCatalog = useCallback(() => {
     sessionStorage.setItem(CATALOG_TARGET_KEY, id);
-    navigate('/catalogo-tracos');
-  };
+    navigate("/catalogo-tracos");
+  }, [id, navigate]);
 
   return (
     <CharacterView
       key={id}
       sheetId={id}
-      onBack={() => navigate('/')}
+      onBack={() => navigate("/")}
       onSyncRegistry={sincronizarRegistro}
       onOpenCatalog={handleOpenCatalog}
     />
-  )
+  );
 }
 
 function App() {
-  const [, navigate] = useHashLocation()
+  const [, navigate] = useHashLocation();
 
   const {
     fichasCompletas,
@@ -197,80 +221,108 @@ function App() {
     removerFicha,
     duplicarFicha,
     sincronizarRegistro,
-  } = useSheetManager()
+  } = useSheetManager();
 
-  const handleCriar = async (tipo: SheetTipo) => {
-    const id = await criarFicha(tipo)
-    navigate(`/sheet/${id}`)
-  }
+  const handleCriar = useCallback(
+    async (tipo: SheetTipo) => {
+      const id = await criarFicha(tipo);
+      navigate(`/sheet/${id}`);
+    },
+    [criarFicha, navigate],
+  );
 
-  const handleImportar = async (data: any) => {
-    const id = await importarFicha(data)
-    navigate(`/sheet/${id}`)
-  }
+  const handleImportar = useCallback(
+    async (data: any) => {
+      const id = await importarFicha(data);
+      navigate(`/sheet/${id}`);
+    },
+    [importarFicha, navigate],
+  );
 
-  const handleOpen = (id: string) => {
-    navigate(`/sheet/${id}`)
-  }
+  const handleOpen = useCallback(
+    (id: string) => {
+      navigate(`/sheet/${id}`);
+    },
+    [navigate],
+  );
 
-  const handleDelete = (id: string) => {
-    if (confirm('Tem certeza que deseja excluir esta ficha?')) {
-      removerFicha(id)
-    }
-  }
+  const handleDelete = useCallback(
+    (id: string) => {
+      if (confirm("Tem certeza que deseja excluir esta ficha?")) {
+        removerFicha(id);
+      }
+    },
+    [removerFicha],
+  );
 
-  const handleDuplicate = (id: string) => {
-    duplicarFicha(id)
-  }
+  const handleDuplicate = useCallback(
+    (id: string) => {
+      duplicarFicha(id);
+    },
+    [duplicarFicha],
+  );
 
-  const handleExport = async (id: string) => {
+  const handleExport = useCallback(async (id: string) => {
     try {
       const data = await characterRepo.findById(id);
       const { id: _id, ...exportData } = data; // strip persistence field
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `${data.nome || 'personagem'}.json`
-      a.click()
-      URL.revokeObjectURL(url)
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${data.nome || "personagem"}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
     } catch (e) {
-      console.error('Falha ao exportar:', e);
+      console.error("Falha ao exportar:", e);
     }
-  }
+  }, []);
 
-  const handleOpenCodexThreat = async (threat: any) => {
-    const character: Character = {
-      ...createDefaultCharacter(),
-      nome: threat.nome,
-      descricao: threat.descricao,
-      ranque: threat.ranque,
-      estresse: Array(threat.estresseMax || 6).fill('livre'),
-      proficiencias: threat.proficiencias || [],
-      tracos: threat.tracos || [],
-      equipamentos: threat.equipamentos || [],
-      taticas: Array.isArray(threat.taticas) ? threat.taticas.join('\n') : (threat.taticas || ''),
-      tipo: 'npc',
-      atualizadoEm: new Date().toISOString(),
-    }
-    
-    const id = await importarFicha(character)
-    navigate(`/sheet/${id}`)
-  }
+  const handleOpenCodexThreat = useCallback(
+    async (threat: any) => {
+      const character: Character = {
+        ...createDefaultCharacter(),
+        nome: threat.nome,
+        descricao: threat.descricao,
+        ranque: threat.ranque,
+        estresse: Array(threat.estresseMax || 6).fill("livre"),
+        proficiencias: threat.proficiencias || [],
+        tracos: threat.tracos || [],
+        equipamentos: threat.equipamentos || [],
+        taticas: Array.isArray(threat.taticas)
+          ? threat.taticas.join("\n")
+          : threat.taticas || "",
+        tipo: "npc",
+        atualizadoEm: new Date().toISOString(),
+      };
 
-  const handleAddTraitFromCatalog = async (traco: Traco) => {
-    const targetId = sessionStorage.getItem(CATALOG_TARGET_KEY);
-    if (!targetId) return;
-    try {
-      const data = await characterRepo.findById(targetId);
-      await characterRepo.save({ ...data, tracos: [...(data.tracos ?? []), traco] });
-      sincronizarRegistro(targetId, data.nome);
-      sessionStorage.removeItem(CATALOG_TARGET_KEY);
-      navigate(`/sheet/${targetId}`);
-    } catch (e) {
-      console.error('Falha ao adicionar traço:', e);
-    }
-  };
+      const id = await importarFicha(character);
+      navigate(`/sheet/${id}`);
+    },
+    [importarFicha, navigate],
+  );
+
+  const handleAddTraitFromCatalog = useCallback(
+    async (traco: Traco) => {
+      const targetId = sessionStorage.getItem(CATALOG_TARGET_KEY);
+      if (!targetId) return;
+      try {
+        const data = await characterRepo.findById(targetId);
+        await characterRepo.save({
+          ...data,
+          tracos: [...(data.tracos ?? []), traco],
+        });
+        sincronizarRegistro(targetId, data.nome);
+        sessionStorage.removeItem(CATALOG_TARGET_KEY);
+        navigate(`/sheet/${targetId}`);
+      } catch (e) {
+        console.error("Falha ao adicionar traço:", e);
+      }
+    },
+    [sincronizarRegistro, navigate],
+  );
 
   return (
     <Router hook={useHashLocation}>
@@ -286,17 +338,18 @@ function App() {
             onDelete={handleDelete}
             onDuplicate={handleDuplicate}
             onExport={handleExport}
-            onOpenCodex={() => navigate('/codex')}
-            onOpenCatalogTracos={() => navigate('/catalogo-tracos')}
+            onOpenCodex={() => navigate("/codex")}
+            onOpenCatalogTracos={() => navigate("/catalogo-tracos")}
           />
         </Route>
         <Route path="/sheet/:id">
-          <CharacterViewRoute
-            sincronizarRegistro={sincronizarRegistro}
-          />
+          <CharacterViewRoute sincronizarRegistro={sincronizarRegistro} />
         </Route>
         <Route path="/codex">
-          <CodiceAmeacas onBack={() => navigate('/')} onOpenThreat={handleOpenCodexThreat} />
+          <CodiceAmeacas
+            onBack={() => navigate("/")}
+            onOpenThreat={handleOpenCodexThreat}
+          />
         </Route>
         <Route path="/catalogo-tracos">
           <CatalogoTracos
@@ -306,15 +359,19 @@ function App() {
                 sessionStorage.removeItem(CATALOG_TARGET_KEY);
                 navigate(`/sheet/${targetId}`);
               } else {
-                navigate('/');
+                navigate("/");
               }
             }}
-            onAddTrait={sessionStorage.getItem(CATALOG_TARGET_KEY) ? handleAddTraitFromCatalog : undefined}
+            onAddTrait={
+              sessionStorage.getItem(CATALOG_TARGET_KEY)
+                ? handleAddTraitFromCatalog
+                : undefined
+            }
           />
         </Route>
       </Switch>
     </Router>
-  )
+  );
 }
 
-export default App
+export default App;

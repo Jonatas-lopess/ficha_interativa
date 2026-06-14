@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo } from "react";
 import SectionHeader from "./SectionHeader";
 
 // Diamond/gem icon — evokes identity facets
@@ -24,7 +24,7 @@ interface Props {
   onUpdate: (aspectos: string[]) => void;
 }
 
-export default function AspectList({ aspectos, onUpdate }: Props) {
+const AspectList = memo(function AspectList({ aspectos, onUpdate }: Props) {
   const [novoAspecto, setNovoAspecto] = useState("");
 
   const handleAdd = () => {
@@ -102,4 +102,6 @@ export default function AspectList({ aspectos, onUpdate }: Props) {
       )}
     </section>
   );
-}
+});
+
+export default AspectList;

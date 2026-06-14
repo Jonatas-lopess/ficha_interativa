@@ -1,3 +1,4 @@
+import { memo } from "react";
 import SectionHeader from "./SectionHeader";
 import { SparklesIcon } from "./Icons";
 import { EstresseEstado } from "../types";
@@ -23,7 +24,7 @@ interface Props {
   onAdjust: (delta: number) => void;
 }
 
-export default function StressBar({
+const StressBar = memo(function StressBar({
   estresse,
   maxEstresse,
   onToggle,
@@ -78,11 +79,13 @@ export default function StressBar({
         <div className="flex gap-4 text-[10px] md:text-xs text-parchment-dim bg-base/30 px-4 py-2 rounded-lg border border-surface-light/50">
           <span className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-stress-spent inline-block" />
-            Gastos: <span className="text-stress-spent font-bold">{gastos}</span>
+            Gastos:{" "}
+            <span className="text-stress-spent font-bold">{gastos}</span>
           </span>
           <span className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-stress-corrupt inline-block" />
-            Corrompidos: <span className="text-stress-corrupt font-bold">{corrompidos}</span>
+            Corrompidos:{" "}
+            <span className="text-stress-corrupt font-bold">{corrompidos}</span>
           </span>
           <span className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-stress-free inline-block" />
@@ -92,4 +95,6 @@ export default function StressBar({
       </div>
     </section>
   );
-}
+});
+
+export default StressBar;

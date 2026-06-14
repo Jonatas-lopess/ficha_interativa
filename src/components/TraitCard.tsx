@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo } from "react";
 import { TIPOS_EFEITO, ORIGENS_TRACO } from "../data/rankData";
 import SectionHeader from "./SectionHeader";
 import { SparklesIcon } from "./Icons";
@@ -37,7 +37,7 @@ interface Props {
   onOpenCatalog?: () => void;
 }
 
-export default function TraitCard({
+const TraitCard = memo(function TraitCard({
   tracos,
   onUpdate,
   title = "Traços",
@@ -417,4 +417,6 @@ export default function TraitCard({
       )}
     </section>
   );
-}
+});
+
+export default TraitCard;

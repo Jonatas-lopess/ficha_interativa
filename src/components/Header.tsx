@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, memo } from "react";
 import { RANQUES } from "../data/rankData";
 import { importarDeArquivo } from "../utils/exportImport";
 import SectionHeader from "./SectionHeader";
@@ -17,10 +17,10 @@ interface Props {
   importarFicha: (jsonString: string) => void;
   resetarFicha: () => void;
   salvarOnline: () => void;
-  onlineSaveStatus: 'idle' | 'saving' | 'success' | 'error';
+  onlineSaveStatus: "idle" | "saving" | "success" | "error";
 }
 
-export default function Header({
+const Header = memo(function Header({
   character,
   updateField,
   updateRanque,
@@ -160,23 +160,70 @@ export default function Header({
               >
                 {/* Spinner, Success Check, Error X, or Cloud Icon */}
                 {onlineSaveStatus === "saving" && (
-                  <svg className="animate-spin h-3.5 w-3.5 text-gold-dim" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  <svg
+                    className="animate-spin h-3.5 w-3.5 text-gold-dim"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
                   </svg>
                 )}
                 {onlineSaveStatus === "success" && (
-                  <svg className="w-3.5 h-3.5 text-green-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  <svg
+                    className="w-3.5 h-3.5 text-green-500"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M5 13l4 4L19 7"
+                    />
                   </svg>
                 )}
                 {onlineSaveStatus === "error" && (
-                  <svg className="w-3.5 h-3.5 text-red-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  <svg
+                    className="w-3.5 h-3.5 text-red-500"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                 )}
                 {onlineSaveStatus === "idle" && (
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="w-3.5 h-3.5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" />
                   </svg>
                 )}
@@ -192,7 +239,16 @@ export default function Header({
                 title="Sincronização Online não configurada"
                 className="flex items-center gap-1.5 px-4 py-2 text-xs uppercase tracking-wider bg-surface text-parchment-dim/40 cursor-not-allowed select-none border-l border-surface-light"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="w-3.5 h-3.5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" />
                 </svg>
                 Salvar Online
@@ -209,11 +265,15 @@ export default function Header({
               </p>
               {isSupabaseConfigured ? (
                 <p>
-                  Salva esta ficha manualmente na nuvem do Supabase. Outros dispositivos/mestres verão as alterações.
+                  Salva esta ficha manualmente na nuvem do Supabase. Outros
+                  dispositivos/mestres verão as alterações.
                 </p>
               ) : (
                 <p>
-                  Não configurado. Adicione <code className="text-gold">VITE_SUPABASE_URL</code> e <code className="text-gold">VITE_SUPABASE_ANON_KEY</code> no arquivo <code className="text-gold">.env.local</code>.
+                  Não configurado. Adicione{" "}
+                  <code className="text-gold">VITE_SUPABASE_URL</code> e{" "}
+                  <code className="text-gold">VITE_SUPABASE_ANON_KEY</code> no
+                  arquivo <code className="text-gold">.env.local</code>.
                 </p>
               )}
             </div>
@@ -241,4 +301,6 @@ export default function Header({
       <div className="mt-6 w-full h-px bg-gradient-to-r from-transparent via-surface-light to-transparent" />
     </header>
   );
-}
+});
+
+export default Header;

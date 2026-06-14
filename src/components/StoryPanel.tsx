@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo } from "react";
 import SectionHeader from "./SectionHeader";
 import { BookOpenIcon } from "./Icons";
 import { Character } from "../types";
@@ -11,7 +11,7 @@ interface Props {
   ) => void;
 }
 
-export default function StoryPanel({ character, updateField }: Props) {
+const StoryPanel = memo(function StoryPanel({ character, updateField }: Props) {
   const [frase, setFrase] = useState("");
   const [objetivo, setObjetivo] = useState("");
 
@@ -173,4 +173,6 @@ export default function StoryPanel({ character, updateField }: Props) {
       </div>
     </section>
   );
-}
+});
+
+export default StoryPanel;

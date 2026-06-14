@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo } from "react";
 import SectionHeader from "./SectionHeader";
 import { HeartPulseIcon } from "./Icons";
 import { Lesoes, RankData, LesaoDescricao } from "../types";
@@ -12,12 +12,24 @@ const CATEGORIAS: Array<{ key: keyof Lesoes; label: string; icon: string }> = [
 interface Props {
   lesoes: Lesoes;
   rankData: RankData;
-  onUpdate: (cat: keyof Lesoes, sev: 'leves' | 'graves' | 'criticas', valor: number | LesaoDescricao[]) => void;
+  onUpdate: (
+    cat: keyof Lesoes,
+    sev: "leves" | "graves" | "criticas",
+    valor: number | LesaoDescricao[],
+  ) => void;
 }
 
-export default function InjuryTracker({ lesoes, rankData, onUpdate }: Props) {
+const InjuryTracker = memo(function InjuryTracker({
+  lesoes,
+  rankData,
+  onUpdate,
+}: Props) {
   // Track which injury description is being edited
-  const [editing, setEditing] = useState<{ cat: keyof Lesoes, sev: 'graves' | 'criticas', idx: number } | null>(null);
+  const [editing, setEditing] = useState<{
+    cat: keyof Lesoes;
+    sev: "graves" | "criticas";
+    idx: number;
+  } | null>(null);
 
   // --- Leves (simple counter) ---
   const handleLevesChange = (cat: keyof Lesoes, delta: number) => {
@@ -28,7 +40,10 @@ export default function InjuryTracker({ lesoes, rankData, onUpdate }: Props) {
   };
 
   // --- Graves / Críticas (array with descriptions) ---
-  const getArray = (cat: keyof Lesoes, sev: 'graves' | 'criticas'): LesaoDescricao[] => {
+  const getArray = (
+    cat: keyof Lesoes,
+    sev: "graves" | "criticas",
+  ): LesaoDescricao[] => {
     const val = lesoes[cat][sev];
     // Backwards compatibility: if it's a number, convert to array
     if (typeof val === "number")
@@ -36,11 +51,11 @@ export default function InjuryTracker({ lesoes, rankData, onUpdate }: Props) {
     return val || [];
   };
 
-  const getMax = (sev: 'graves' | 'criticas') => {
+  const getMax = (sev: "graves" | "criticas") => {
     return sev === "graves" ? rankData.lesoesGraves : rankData.lesoesCriticas;
   };
 
-  const handleAddInjury = (cat: keyof Lesoes, sev: 'graves' | 'criticas') => {
+  const handleAddInjury = (cat: keyof Lesoes, sev: "graves" | "criticas") => {
     const arr = getArray(cat, sev);
     if (arr.length >= getMax(sev)) return;
     const newArr = [...arr, { descricao: "" }];
@@ -49,14 +64,22 @@ export default function InjuryTracker({ lesoes, rankData, onUpdate }: Props) {
     setEditing({ cat, sev, idx: newArr.length - 1 });
   };
 
-  const handleRemoveInjury = (cat: keyof Lesoes, sev: 'graves' | 'criticas') => {
+  const handleRemoveInjury = (
+    cat: keyof Lesoes,
+    sev: "graves" | "criticas",
+  ) => {
     const arr = getArray(cat, sev);
     if (arr.length === 0) return;
     onUpdate(cat, sev, arr.slice(0, -1));
     setEditing(null);
   };
 
-  const handleDescChange = (cat: keyof Lesoes, sev: 'graves' | 'criticas', idx: number, value: string) => {
+  const handleDescChange = (
+    cat: keyof Lesoes,
+    sev: "graves" | "criticas",
+    idx: number,
+    value: string,
+  ) => {
     const arr = getArray(cat, sev);
     const updated = arr.map((item, i) =>
       i === idx ? { ...item, descricao: value } : item,
@@ -64,7 +87,14 @@ export default function InjuryTracker({ lesoes, rankData, onUpdate }: Props) {
     onUpdate(cat, sev, updated);
   };
 
-  const sevConfig: Array<{ key: 'graves' | 'criticas'; label: string; maxKey: keyof RankData; color: string; border: string; dot: string }> = [
+  const sevConfig: Array<{
+    key: "graves" | "criticas";
+    label: string;
+    maxKey: keyof RankData;
+    color: string;
+    border: string;
+    dot: string;
+  }> = [
     {
       key: "graves",
       label: "Graves",
@@ -211,4 +241,6 @@ export default function InjuryTracker({ lesoes, rankData, onUpdate }: Props) {
       </div>
     </section>
   );
-}
+});
+
+export default InjuryTracker;

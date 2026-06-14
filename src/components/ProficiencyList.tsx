@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo } from "react";
 import SectionHeader from "./SectionHeader";
 import { BrainIcon } from "./Icons";
 
@@ -7,7 +7,10 @@ interface Props {
   onUpdate: (proficiencias: string[]) => void;
 }
 
-export default function ProficiencyList({ proficiencias, onUpdate }: Props) {
+const ProficiencyList = memo(function ProficiencyList({
+  proficiencias,
+  onUpdate,
+}: Props) {
   const [novaProf, setNovaProf] = useState("");
 
   const handleAdd = () => {
@@ -30,10 +33,10 @@ export default function ProficiencyList({ proficiencias, onUpdate }: Props) {
 
   return (
     <section className="bg-surface rounded-xl border border-surface-light p-4 md:p-6">
-      <SectionHeader 
-        title="Proficiências" 
-        subtitle="Áreas de treino e conhecimento" 
-        icon={<BrainIcon />} 
+      <SectionHeader
+        title="Proficiências"
+        subtitle="Áreas de treino e conhecimento"
+        icon={<BrainIcon />}
       />
 
       {/* Input */}
@@ -83,4 +86,6 @@ export default function ProficiencyList({ proficiencias, onUpdate }: Props) {
       )}
     </section>
   );
-}
+});
+
+export default ProficiencyList;

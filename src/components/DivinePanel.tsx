@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, memo } from "react";
 import AnchorCard from "./AnchorCard";
 import {
   PESO_DIVINO,
@@ -55,7 +55,7 @@ interface Props {
   onUpdateProficiencies: (proficiencias: string[]) => void;
 }
 
-export default function DivinePanel({
+const DivinePanel = memo(function DivinePanel({
   divino,
   ranque,
   onUpdateDivino,
@@ -623,4 +623,6 @@ export default function DivinePanel({
       </div>
     </section>
   );
-}
+});
+
+export default DivinePanel;

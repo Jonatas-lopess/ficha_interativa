@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, memo } from "react";
 import { importarDeArquivo } from "../utils/exportImport";
 import { SheetRegistryEntry, SheetTipo } from "../types";
 import { getOrGenerateUserId, setUserId } from "../utils/userId";
@@ -18,7 +18,7 @@ interface ActionCardProps {
   variant?: "gold" | "arcane" | "severe";
 }
 
-function ActionCard({
+const ActionCard = memo(function ActionCard({
   id,
   icon,
   title,
@@ -47,7 +47,7 @@ function ActionCard({
       </p>
     </button>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // SheetCard
@@ -60,7 +60,7 @@ interface SheetCardProps {
   onExport: () => void;
 }
 
-function SheetCard({
+const SheetCard = memo(function SheetCard({
   entry,
   onOpen,
   onDelete,
@@ -275,7 +275,7 @@ function SheetCard({
       </div>
     </div>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // SheetSection (generic, reused in both player and GM areas)
@@ -295,7 +295,7 @@ interface SheetSectionProps {
   variant?: "gold" | "arcane" | "severe";
 }
 
-function SheetSection({
+const SheetSection = memo(function SheetSection({
   title,
   icon,
   fichas,
@@ -435,7 +435,7 @@ function SheetSection({
       )}
     </section>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // GMSection — collapsible panel wrapping simplified + NPC + codex
@@ -452,7 +452,7 @@ interface GMSectionProps {
   onOpenCodex: () => void;
 }
 
-function GMSection({
+const GMSection = memo(function GMSection({
   fichasNpc,
   fichasSimplificadas,
   onCriar,
@@ -555,7 +555,7 @@ function GMSection({
       </div>
     </div>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // HomePage
@@ -574,7 +574,7 @@ interface HomePageProps {
   onOpenCatalogTracos: () => void;
 }
 
-export default function HomePage({
+const HomePage = memo(function HomePage({
   fichasCompletas,
   fichasNpc,
   fichasSimplificadas,
@@ -756,4 +756,6 @@ export default function HomePage({
       </div>
     </div>
   );
-}
+});
+
+export default HomePage;
