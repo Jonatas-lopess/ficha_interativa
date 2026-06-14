@@ -142,11 +142,37 @@ export default function DivinePanel({
     const activeRank = ranque
 
     // 1. Sync traits
-    const expectedDivineTraits = dbTraits.filter(t => {
+    const expectedDirectTraits = dbTraits.filter(t => {
       if (t.caminho !== activePathway || t.ranqueRequisito !== activeRank) {
         return false
       }
       return t.saturacaoRequisito === 'Centelha' || (divino.habilidadesNucleo || []).includes(t.nome)
+    })
+
+    const expectedSkillTraits: DivineTrait[] = []
+    dbSkills.forEach(s => {
+      if (s.tipo === 'traco' && s.caminho === activePathway && s.ranqueRequisito === activeRank) {
+        const isActive = s.saturacaoRequisito === 'Centelha' || (divino.habilidadesNucleo || []).includes(s.nome)
+        if (isActive) {
+          const correspondingTrait = dbTraits.find(t => t.nome === s.nome)
+          if (correspondingTrait) {
+            expectedSkillTraits.push({
+              ...correspondingTrait,
+              origem: 'Divino',
+              caminho: s.caminho || undefined,
+              ranqueRequisito: s.ranqueRequisito || undefined,
+              saturacaoRequisito: s.saturacaoRequisito || undefined,
+            })
+          }
+        }
+      }
+    })
+
+    const expectedDivineTraits = [...expectedDirectTraits]
+    expectedSkillTraits.forEach(est => {
+      if (!expectedDivineTraits.some(t => t.nome === est.nome)) {
+        expectedDivineTraits.push(est)
+      }
     })
 
     const currentDivineTraits = tracos.filter(t => t.origem === 'Divino')
@@ -255,7 +281,21 @@ export default function DivinePanel({
       s.caminho === divino.caminho &&
       s.ranqueRequisito === ranque &&
       s.saturacaoRequisito === stage
-    )
+    ).map(s => {
+      if (s.tipo === 'traco') {
+        const traitData = dbTraits.find(t => t.nome === s.nome)
+        if (traitData) {
+          return {
+            ...traitData,
+            id: s.id,
+            caminho: s.caminho || undefined,
+            ranqueRequisito: s.ranqueRequisito || undefined,
+            saturacaoRequisito: s.saturacaoRequisito || undefined,
+          } as DivineTrait
+        }
+      }
+      return s
+    })
     return [...traits, ...skills]
   }
 
