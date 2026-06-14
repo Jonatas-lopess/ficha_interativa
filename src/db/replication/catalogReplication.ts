@@ -78,7 +78,7 @@ export async function startCatalogReplication(db: AppDatabase): Promise<void> {
     client: supabase,
     collection: (db as any).threats,
     replicationIdentifier: 'threats-supabase-v1',
-    live: true,
+    live: false,
     pull: { batchSize: 100 },
   });
 
@@ -87,7 +87,7 @@ export async function startCatalogReplication(db: AppDatabase): Promise<void> {
     client: supabase,
     collection: (db as any).traits,
     replicationIdentifier: 'traits-supabase-v1',
-    live: true,
+    live: false,
     pull: { batchSize: 200 },
   });
 
@@ -96,7 +96,7 @@ export async function startCatalogReplication(db: AppDatabase): Promise<void> {
     client: supabase,
     collection: (db as any).characters,
     replicationIdentifier: `characters-supabase-${userId}`,
-    live: true,
+    live: false,
     pull: {
       batchSize: 50,
       queryBuilder: ({ query }) => query.eq('user_id', userId)

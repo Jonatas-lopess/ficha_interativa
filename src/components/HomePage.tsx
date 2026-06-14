@@ -399,7 +399,11 @@ function GMSection({
             stroke="currentColor"
             strokeWidth={2.5}
           >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M19 9l-7 7-7-7"
+            />
           </svg>
           ⚙ Área do Mestre
           {totalGM > 0 && (
@@ -540,16 +544,21 @@ export default function HomePage({
                 <h2 className="font-title text-parchment text-sm tracking-wide">
                   Sincronização de Fichas
                 </h2>
-                <span className={`text-[9px] px-1.5 py-0.5 rounded font-mono leading-none ${
-                  isSupabaseConfigured
-                    ? "bg-green-500/10 text-green-400 border border-green-500/20"
-                    : "bg-parchment-dim/10 text-parchment-dim/60 border border-surface-light"
-                }`}>
-                  {isSupabaseConfigured ? "Online (Conectado)" : "Local-First Only"}
+                <span
+                  className={`text-[9px] px-1.5 py-0.5 rounded font-mono leading-none ${
+                    isSupabaseConfigured
+                      ? "bg-green-500/10 text-green-400 border border-green-500/20"
+                      : "bg-parchment-dim/10 text-parchment-dim/60 border border-surface-light"
+                  }`}
+                >
+                  {isSupabaseConfigured
+                    ? "Online (Conectado)"
+                    : "Local-First Only"}
                 </span>
               </div>
               <p className="text-xs text-parchment-dim leading-relaxed">
-                Suas fichas são salvas no banco de dados com base na sua chave de jogador única abaixo.
+                Suas fichas são salvas no banco de dados com base na sua chave
+                de jogador única.
               </p>
             </div>
 
@@ -579,8 +588,13 @@ export default function HomePage({
               ) : (
                 <div className="flex items-center justify-between gap-2 bg-base border border-surface-light rounded-lg px-3 py-1.5">
                   <div className="min-w-0 flex-1">
-                    <span className="text-[10px] text-parchment-dim block select-none">Chave de Jogador (ID)</span>
-                    <span className="font-mono text-xs text-gold truncate block" title={currentUserId}>
+                    <span className="text-[10px] text-parchment-dim block select-none">
+                      Chave de Jogador (ID)
+                    </span>
+                    <span
+                      className="font-mono text-xs text-gold truncate block"
+                      title={currentUserId}
+                    >
                       {currentUserId}
                     </span>
                   </div>

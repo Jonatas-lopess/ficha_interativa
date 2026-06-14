@@ -60,6 +60,14 @@ async function _createDb() {
  * after the first call.
  */
 export async function getDatabase(): Promise<AppDatabase> {
+  if (import.meta.env.DEV) {
+    const globalObj = typeof window !== 'undefined' ? (window as any) : globalThis;
+    if (!globalObj.__rxdb_db) {
+      globalObj.__rxdb_db = await _createDb();
+    }
+    return globalObj.__rxdb_db;
+  }
+
   if (!_dbInstance) {
     _dbInstance = await _createDb();
   }
