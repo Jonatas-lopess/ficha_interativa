@@ -1,22 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import AnchorCard from './AnchorCard'
 import { PESO_DIVINO, SATURACAO_ESTAGIOS, INTEGRACAO_ESTAGIOS } from '../data/rankData'
 import SectionHeader from './SectionHeader'
 import { SunIcon } from './Icons'
-import { Divino, Ancora, SaturacaoEstagio, IntegracaoEstagio, RanqueNome } from '../types'
-import coreSkillsData from '../data/coreSkills.json'
-
-// --- Core Skills types ---
-interface CoreSkill {
-  name: string;
-  description: string;
-  type: string;
-}
-
-interface PathwayData {
-  pathway: string;
-  ranks: Record<string, Record<string, CoreSkill[]>>;
-}
+import { Divino, Ancora, SaturacaoEstagio, IntegracaoEstagio, RanqueNome, Traco, TipoEfeito, DivineTrait } from '../types'
+import { getDatabase } from '../db'
 
 const STAGE_ORDER: SaturacaoEstagio[] = ['Centelha', 'Crescente', 'Consolidado', 'Completo']
 
@@ -27,43 +15,149 @@ const STAGE_ICONS: Record<string, string> = {
   Completo: '👁',
 }
 
-// Extract unique pathway names from the JSON
-const PATHWAYS = (coreSkillsData as PathwayData[]).map(p => p.pathway)
+function getEffectTypes(traco: Traco): TipoEfeito[] {
+  if (!traco.efeitos || traco.efeitos.length === 0) {
+    return ['Passivo']
+  }
+  const tipos = traco.efeitos.map(e => e.tipo)
+  return Array.from(new Set(tipos))
+}
 
 interface Props {
   divino: Divino;
   ranque: RanqueNome;
   onUpdateDivino: <K extends keyof Divino>(field: K, value: Divino[K]) => void;
   onUpdateAnchors: (ancoras: Ancora[]) => void;
+  tracos: Traco[];
+  onUpdateTraits: (tracos: Traco[]) => void;
 }
 
-export default function DivinePanel({ divino, ranque, onUpdateDivino, onUpdateAnchors }: Props) {
+export default function DivinePanel({
+  divino,
+  ranque,
+  onUpdateDivino,
+  onUpdateAnchors,
+  tracos,
+  onUpdateTraits,
+}: Props) {
+  const [dbTraits, setDbTraits] = useState<DivineTrait[]>([])
+  const [loading, setLoading] = useState(true)
   const [expandedStage, setExpandedStage] = useState<SaturacaoEstagio | null>(null)
+
+  useEffect(() => {
+    let active = true
+    let sub: any
+
+    getDatabase().then(db => {
+      if (!active) return
+      sub = db.traits
+        .find({
+          selector: {
+            origem: 'Divino'
+          }
+        })
+        .$.subscribe(docs => {
+          if (!active) return
+          const list = docs.map(doc => {
+            const raw = doc.toJSON()
+            return {
+              id: raw.id,
+              nome: raw.nome || "",
+              conceito: raw.conceito || "",
+              gatilho: raw.gatilho || "",
+              efeitos: raw.efeitos || [],
+              limiteCusto: raw.limiteCusto || "",
+              origem: raw.origem || "Base",
+              caminho: raw.caminho || "",
+              ranqueRequisito: raw.ranqueRequisito || "",
+              saturacaoRequisito: raw.saturacaoRequisito || "",
+            } as DivineTrait
+          })
+          setDbTraits(list)
+          setLoading(false)
+        })
+    }).catch(err => {
+      console.error("Erro ao carregar banco de dados no DivinePanel:", err)
+      if (active) setLoading(false)
+    })
+
+    return () => {
+      active = false
+      if (sub) sub.unsubscribe()
+    }
+  }, [])
+
+  // Keep character.tracos in sync with unlocked/Centelha skills
+  useEffect(() => {
+    if (loading || ranque === 'Humano') return
+
+    const activePathway = divino.caminho
+    const activeRank = ranque
+
+    const expectedDivineTraits = dbTraits.filter(t => {
+      if (t.caminho !== activePathway || t.ranqueRequisito !== activeRank) {
+        return false
+      }
+      return t.saturacaoRequisito === 'Centelha' || (divino.habilidadesNucleo || []).includes(t.nome)
+    })
+
+    const currentDivineTraits = tracos.filter(t => t.origem === 'Divino')
+
+    const missing = expectedDivineTraits.filter(
+      et => !tracos.some(t => t.nome === et.nome)
+    )
+
+    const outdated = currentDivineTraits.filter(
+      ct => !expectedDivineTraits.some(et => et.nome === ct.nome)
+    )
+
+    if (missing.length > 0 || outdated.length > 0) {
+      const nextTraits = [
+        ...tracos.filter(t => t.origem !== 'Divino' || expectedDivineTraits.some(et => et.nome === t.nome)),
+        ...missing
+      ]
+      onUpdateTraits(nextTraits)
+    }
+  }, [dbTraits, divino.caminho, divino.habilidadesNucleo, ranque, tracos, loading, onUpdateTraits])
+
+  const PATHWAYS = useMemo(() => {
+    const base = ['Destruição', 'Morte']
+    if (divino.caminho && !base.includes(divino.caminho)) {
+      base.push(divino.caminho)
+    }
+    dbTraits.forEach(t => {
+      if (t.caminho && !base.includes(t.caminho)) {
+        base.push(t.caminho)
+      }
+    })
+    return base
+  }, [divino.caminho, dbTraits])
 
   const pesoInfo = PESO_DIVINO.find((p) => p.nivel === divino.pesoDivino) || PESO_DIVINO[0]
 
   const currentSatIdx = STAGE_ORDER.indexOf(divino.saturacao)
 
-  // Find the skills for the current pathway + rank
-  const pathwayData = (coreSkillsData as PathwayData[]).find(
-    p => p.pathway === divino.caminho
-  )
-
-  const rankKey = ranque === 'Humano' ? '' : ranque
-  const rankPool = rankKey && pathwayData?.ranks?.[rankKey]
-
-  const getSkillsForStage = (stage: SaturacaoEstagio): CoreSkill[] => {
-    if (!rankPool) return []
-    return (rankPool[stage] as CoreSkill[]) || []
+  const getSkillsForStage = (stage: SaturacaoEstagio): DivineTrait[] => {
+    return dbTraits.filter(t => 
+      t.caminho === divino.caminho &&
+      t.ranqueRequisito === ranque &&
+      t.saturacaoRequisito === stage
+    )
   }
 
   const unlocked = divino.habilidadesNucleo || []
 
   const toggleSkill = (skillName: string) => {
-    const next = unlocked.includes(skillName)
+    const isUnlocked = unlocked.includes(skillName)
+    const nextHabilidades = isUnlocked
       ? unlocked.filter(n => n !== skillName)
       : [...unlocked, skillName]
-    onUpdateDivino('habilidadesNucleo', next)
+    onUpdateDivino('habilidadesNucleo', nextHabilidades)
+  }
+
+  const handlePathwayChange = (newCaminho: string) => {
+    onUpdateDivino('habilidadesNucleo', [])
+    onUpdateDivino('caminho', newCaminho)
   }
 
   const handleStageClick = (stage: SaturacaoEstagio) => {
@@ -72,21 +166,30 @@ export default function DivinePanel({ divino, ranque, onUpdateDivino, onUpdateAn
     setExpandedStage(prev => prev === stage ? null : stage)
   }
 
-  // Check if there are any skills at all for the current pathway+rank
   const hasAnySkills = STAGE_ORDER.some(s => getSkillsForStage(s).length > 0)
+
+  if (loading) {
+    return (
+      <section className="rounded-xl border border-arcane/30 p-4 md:p-6 bg-gradient-to-br from-arcane/10 to-transparent">
+        <SectionHeader title="Painel Divino" subtitle="Integração e Máculas" icon={<SunIcon />} color="text-arcane-bright" />
+        <div className="flex items-center justify-center py-8">
+          <span className="text-sm text-parchment-dim animate-pulse">Carregando dados divinos...</span>
+        </div>
+      </section>
+    )
+  }
 
   return (
     <section className="rounded-xl border border-arcane/30 p-4 md:p-6 bg-gradient-to-br from-arcane/10 to-transparent">
       <SectionHeader title="Painel Divino" subtitle="Integração e Máculas" icon={<SunIcon />} color="text-arcane-bright" />
 
       <div className="space-y-4">
-        {/* Caminho Divino — select */}
         <div>
           <label htmlFor="divine-caminho" className="block text-xs text-parchment-dim mb-1 uppercase tracking-wider">Caminho Divino</label>
           <select
             id="divine-caminho"
             value={divino.caminho}
-            onChange={(e) => onUpdateDivino('caminho', e.target.value)}
+            onChange={(e) => handlePathwayChange(e.target.value)}
             className="w-full bg-base/50 border border-surface-light rounded-lg px-3 py-2 text-sm text-parchment focus:border-arcane outline-none transition-all cursor-pointer"
           >
             <option value="">Selecione um Caminho…</option>
@@ -96,13 +199,11 @@ export default function DivinePanel({ divino, ranque, onUpdateDivino, onUpdateAn
           </select>
         </div>
 
-        {/* Persona */}
         <div>
           <label htmlFor="divine-persona" className="block text-xs text-parchment-dim mb-1 uppercase tracking-wider">Persona</label>
           <input id="divine-persona" type="text" value={divino.persona} onChange={(e) => onUpdateDivino('persona', e.target.value)} placeholder="Nome da Persona divina" className="w-full bg-base/50 border border-surface-light rounded-lg px-3 py-2 text-sm text-parchment placeholder-parchment-dim/40 focus:border-arcane outline-none transition-all" />
         </div>
 
-        {/* Peso Divino */}
         <div>
           <label className="block text-xs text-parchment-dim mb-2 uppercase tracking-wider">Peso Divino — {pesoInfo.nome}</label>
           <div className="flex gap-1 mb-1">
@@ -115,7 +216,6 @@ export default function DivinePanel({ divino, ranque, onUpdateDivino, onUpdateAn
           <p className="text-xs text-parchment-dim/60 italic">{pesoInfo.descricao}</p>
         </div>
 
-        {/* Saturação */}
         <div>
           <label className="block text-xs text-parchment-dim mb-2 uppercase tracking-wider">Saturação</label>
           <div className="flex gap-1">
@@ -135,7 +235,6 @@ export default function DivinePanel({ divino, ranque, onUpdateDivino, onUpdateAn
           </div>
         </div>
 
-        {/* Integração */}
         <div>
           <label className="block text-xs text-parchment-dim mb-2 uppercase tracking-wider">Integração</label>
           <div className="flex gap-1">
@@ -155,7 +254,6 @@ export default function DivinePanel({ divino, ranque, onUpdateDivino, onUpdateAn
           </div>
         </div>
 
-        {/* ═══ HABILIDADES DO NÚCLEO ═══ */}
         <div className="h-px bg-gradient-to-r from-transparent via-arcane/30 to-transparent" />
 
         <div>
@@ -173,7 +271,6 @@ export default function DivinePanel({ divino, ranque, onUpdateDivino, onUpdateAn
             </p>
           ) : (
             <div className="space-y-2">
-              {/* Stage cards row */}
               <div className="grid grid-cols-4 gap-2">
                 {STAGE_ORDER.map((stage, idx) => {
                   const isUnlocked = idx <= currentSatIdx
@@ -182,7 +279,7 @@ export default function DivinePanel({ divino, ranque, onUpdateDivino, onUpdateAn
                   const isCentelhaStage = stage === 'Centelha'
                   const unlockedCount = isCentelhaStage
                     ? stageSkills.length
-                    : stageSkills.filter(s => unlocked.includes(s.name)).length
+                    : stageSkills.filter(s => unlocked.includes(s.nome)).length
 
                   return (
                     <button
@@ -209,7 +306,6 @@ export default function DivinePanel({ divino, ranque, onUpdateDivino, onUpdateAn
                 })}
               </div>
 
-              {/* Expanded skill list */}
               {expandedStage && (
                 <div className="mt-2 space-y-1.5 animate-fadeIn">
                   {(() => {
@@ -225,14 +321,14 @@ export default function DivinePanel({ divino, ranque, onUpdateDivino, onUpdateAn
                     const isCentelha = expandedStage === 'Centelha'
 
                     return skills.map((skill) => {
-                      const isSkillUnlocked = unlocked.includes(skill.name) || isCentelha
+                      const isSkillUnlocked = unlocked.includes(skill.nome) || isCentelha
 
                       return (
                         <button
-                          key={skill.name}
+                          key={skill.nome}
                           onClick={() => {
-                            if (isCentelha) return // auto-unlocked, no toggle
-                            toggleSkill(skill.name)
+                            if (isCentelha) return
+                            toggleSkill(skill.nome)
                           }}
                           className={`w-full text-left px-4 py-3 rounded-lg border transition-all duration-200
                             ${isCentelha
@@ -246,17 +342,24 @@ export default function DivinePanel({ divino, ranque, onUpdateDivino, onUpdateAn
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
                                 <span className="text-sm font-medium text-parchment">
-                                  ✦ {skill.name}
+                                  ✦ {skill.nome}
                                 </span>
-                                {skill.type && (
-                                  <span className="text-[9px] px-1.5 py-0.5 bg-arcane/20 text-arcane-bright border border-arcane/30 rounded uppercase font-semibold tracking-wider">
-                                    {skill.type}
-                                  </span>
-                                )}
+                                {getEffectTypes(skill).map((effectType) => {
+                                  const labelMap: Record<TipoEfeito, string> = {
+                                    Passivo: "Traço Passivo",
+                                    Ativável: "Traço Ativável",
+                                    Reativo: "Traço Reativo",
+                                  }
+                                  return (
+                                    <span key={effectType} className="text-[9px] px-1.5 py-0.5 bg-arcane/20 text-arcane-bright border border-arcane/30 rounded uppercase font-semibold tracking-wider">
+                                      {labelMap[effectType] || effectType}
+                                    </span>
+                                  )
+                                })}
                               </div>
-                              {skill.description && (
+                              {skill.conceito && (
                                 <p className="text-[11px] text-parchment-dim/70 mt-1 leading-relaxed">
-                                  {skill.description}
+                                  {skill.conceito}
                                 </p>
                               )}
                             </div>

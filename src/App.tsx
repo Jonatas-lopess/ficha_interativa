@@ -99,7 +99,9 @@ function CharacterView({ sheetId, onBack, onSyncRegistry, onOpenCatalog }: Chara
     exportarFicha,
     importarFicha,
     resetarFicha,
-    loading
+    loading,
+    salvarOnline,
+    onlineSaveStatus
   } = useCharacter(sheetId, onSyncRegistry)
 
   if (loading) {
@@ -149,6 +151,8 @@ function CharacterView({ sheetId, onBack, onSyncRegistry, onOpenCatalog }: Chara
       exportarFicha={exportarFicha}
       importarFicha={importarFicha as any}
       resetarFicha={resetarFicha}
+      salvarOnline={salvarOnline}
+      onlineSaveStatus={onlineSaveStatus}
       onBack={onBack}
       onOpenCatalog={onOpenCatalog}
     />

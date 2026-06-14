@@ -215,6 +215,8 @@ export default function CompleteSheet({
                 ranque={character.ranque}
                 onUpdateDivino={handleUpdateDivino}
                 onUpdateAnchors={handleUpdateAnchors}
+                tracos={character.tracos}
+                onUpdateTraits={(val) => updateField('tracos', val)}
               />
             </div>
           )}
