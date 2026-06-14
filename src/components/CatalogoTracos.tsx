@@ -1,5 +1,6 @@
-import { useState, useMemo } from "react";
-import tracosCatalog from "../data/tracosCatalog.json";
+import { useState, useMemo, useEffect } from "react";
+import { getDatabase } from "../db";
+import { useCatalogSync } from "../db/replication/catalogReplication";
 import { Traco, TipoEfeito, OrigemTraco } from "../types";
 import { MarkdownText } from "./MarkdownText";
 
@@ -204,15 +205,46 @@ function TracoCard({ traco, onAdd }: TracoCardProps) {
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function CatalogoTracos({ onBack, onAddTrait }: Props) {
+  const [tracosCatalog, setTracosCatalog] = useState<CatalogTraco[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterOrigem, setFilterOrigem] = useState<OrigemTraco | "Todos">(
     "Todos",
   );
 
-  const traits = tracosCatalog as CatalogTraco[];
+  const syncStatus = useCatalogSync();
+
+  // Carrega e assina atualizações do banco local (RxDB)
+  useEffect(() => {
+    let sub: any;
+    getDatabase().then(db => {
+      sub = db.traits.find().$.subscribe(docs => {
+        const list = docs.map(doc => {
+          const raw = doc.toJSON();
+          return {
+            id: raw.id,
+            nome: raw.nome || "",
+            conceito: raw.conceito || "",
+            gatilho: raw.gatilho || "",
+            efeitos: raw.efeitos || [],
+            limiteCusto: raw.limiteCusto || "",
+            origem: raw.origem || "Base",
+            caminho: raw.caminho || "",
+            ranqueRequisito: raw.ranqueRequisito || "",
+            saturacaoRequisito: raw.saturacaoRequisito || "",
+          } as CatalogTraco;
+        });
+        setTracosCatalog(list);
+        setLoading(false);
+      });
+    });
+    return () => {
+      if (sub) sub.unsubscribe();
+    };
+  }, []);
 
   const filtered = useMemo(() => {
-    return traits.filter((t) => {
+    return tracosCatalog.filter((t) => {
       const matchOrigem = filterOrigem === "Todos" || t.origem === filterOrigem;
       const q = search.toLowerCase();
       const matchSearch =
@@ -223,10 +255,38 @@ export default function CatalogoTracos({ onBack, onAddTrait }: Props) {
         (t.efeitos ?? []).some((e) => e.descricao.toLowerCase().includes(q));
       return matchOrigem && matchSearch;
     });
-  }, [traits, search, filterOrigem]);
+  }, [tracosCatalog, search, filterOrigem]);
 
   return (
     <div className="min-h-screen bg-base py-10 px-4 relative">
+      {/* Barra de Status de Sincronização */}
+      {syncStatus.isConfigured && (
+        <div className="max-w-5xl mx-auto mb-4">
+          {!syncStatus.online ? (
+            <div className="bg-red-950/40 border border-red-500/30 rounded-xl px-4 py-3 text-xs text-red-200 flex items-center justify-between shadow-sm">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                <span><strong>Modo Offline:</strong> Sem conexão com a internet. Exibindo dados locais do catálogo.</span>
+              </div>
+            </div>
+          ) : syncStatus.isSyncing ? (
+            <div className="bg-gold/5 border border-gold/20 rounded-xl px-4 py-3 text-xs text-gold-dim flex items-center justify-between shadow-sm">
+              <div className="flex items-center gap-2">
+                <svg className="animate-spin h-3.5 w-3.5 text-gold-dim" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>Sincronizando catálogo de traços com o servidor...</span>
+              </div>
+            </div>
+          ) : syncStatus.error ? (
+            <div className="bg-red-950/35 border border-red-500/20 rounded-xl px-4 py-3 text-xs text-red-300 flex items-center justify-between">
+              <span><strong>Erro de Sincronização:</strong> {syncStatus.error}</span>
+            </div>
+          ) : null}
+        </div>
+      )}
+
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <header className="text-center mb-10 relative">
@@ -246,84 +306,128 @@ export default function CatalogoTracos({ onBack, onAddTrait }: Props) {
           <div className="h-px bg-gradient-to-r from-transparent via-gold/30 to-transparent mt-6" />
         </header>
 
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-8">
-          {/* Search */}
-          <div className="relative flex-1">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-parchment-dim/40 text-sm pointer-events-none">
-              ⌕
-            </span>
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar por nome, conceito ou efeito…"
-              className="w-full bg-surface border border-surface-light rounded-xl pl-8 pr-4 py-2.5 text-sm text-parchment placeholder-parchment-dim/40 focus:border-gold focus:ring-1 focus:ring-gold/30 outline-none transition-all"
-            />
-          </div>
-
-          {/* Origin filter */}
-          <div className="flex gap-2 flex-wrap">
-            {(["Todos", ...ORIGENS] as const).map((o) => {
-              const active = filterOrigem === o;
-              const style =
-                o === "Todos"
-                  ? active
-                    ? "bg-gold text-base border-gold"
-                    : "border-surface-light text-parchment-dim hover:border-gold/40 hover:text-parchment"
-                  : active
-                    ? o === "Divino"
-                      ? "bg-arcane text-white border-arcane"
-                      : o === "Alienação"
-                        ? "bg-injury-severe text-white border-injury-severe"
-                        : "bg-gold text-base border-gold"
-                    : o === "Divino"
-                      ? "border-arcane/30 text-arcane/70 hover:border-arcane hover:text-arcane"
-                      : o === "Alienação"
-                        ? "border-injury-severe/30 text-injury-severe/70 hover:border-injury-severe hover:text-injury-severe"
-                        : "border-surface-light text-parchment-dim hover:border-gold/40 hover:text-parchment";
-
-              return (
-                <button
-                  key={o}
-                  onClick={() => setFilterOrigem(o as OrigemTraco | "Todos")}
-                  className={`px-3 py-2 text-xs rounded-lg border font-medium transition-all duration-200 cursor-pointer ${style}`}
-                >
-                  {o}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Count */}
-        <p className="text-xs text-parchment-dim/50 mb-4">
-          {filtered.length} traço{filtered.length !== 1 ? "s" : ""} encontrado
-          {filtered.length !== 1 ? "s" : ""}
-        </p>
-
-        {/* Grid */}
-        {filtered.length === 0 ? (
+        {/* LOADING INICIAL OU BANCO VAZIO SEM CONEXÃO */}
+        {loading || (tracosCatalog.length === 0 && !syncStatus.isInitialSyncComplete) ? (
           <div className="text-center py-20">
-            <p className="text-parchment-dim text-sm italic">
-              Nenhum traço encontrado com esses filtros.
-            </p>
+            <svg className="animate-spin h-8 w-8 text-gold mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p className="text-parchment-dim text-sm italic">Sincronizando e carregando catálogo pela primeira vez...</p>
+          </div>
+        ) : tracosCatalog.length === 0 ? (
+          <div className="bg-surface/50 border border-surface-light/80 rounded-2xl p-8 text-center max-w-lg mx-auto py-12 shadow-xl">
+            <span className="text-4xl block mb-4">📭</span>
+            <h2 className="font-title text-lg text-gold mb-2 uppercase">Catálogo Vazio</h2>
+            
+            {!syncStatus.online ? (
+              <div className="space-y-3">
+                <p className="text-sm text-parchment-dim leading-relaxed">
+                  Não há traços salvos localmente e você está sem conexão com a internet.
+                </p>
+                <div className="bg-red-950/30 border border-red-500/20 rounded-lg p-3 text-xs text-red-300">
+                  ⚠️ Conecte-se à internet para sincronizar o catálogo com o servidor Supabase pela primeira vez.
+                </div>
+              </div>
+            ) : !syncStatus.isConfigured ? (
+              <p className="text-sm text-parchment-dim leading-relaxed">
+                Supabase não está configurado e nenhum dado local foi encontrado. Preencha as variáveis de ambiente VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY.
+              </p>
+            ) : (
+              <p className="text-sm text-parchment-dim leading-relaxed">
+                Nenhum traço encontrado no banco de dados do Supabase. O mestre precisa cadastrar traços para povoar o catálogo.
+              </p>
+            )}
+            
             <button
-              onClick={() => {
-                setSearch("");
-                setFilterOrigem("Todos");
-              }}
-              className="mt-3 text-xs text-gold-dim hover:text-gold transition-colors cursor-pointer"
+              onClick={onBack}
+              className="mt-6 px-4 py-2 text-xs rounded-lg border border-surface-light text-parchment-dim hover:text-gold hover:border-gold transition-colors cursor-pointer"
             >
-              Limpar filtros
+              Voltar ao Início
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-            {filtered.map((traco) => (
-              <TracoCard key={traco.id} traco={traco} onAdd={onAddTrait} />
-            ))}
-          </div>
+          <>
+            {/* Filters */}
+            <div className="flex flex-col sm:flex-row gap-3 mb-8">
+              {/* Search */}
+              <div className="relative flex-1">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-parchment-dim/40 text-sm pointer-events-none">
+                  ⌕
+                </span>
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Buscar por nome, conceito ou efeito…"
+                  className="w-full bg-surface border border-surface-light rounded-xl pl-8 pr-4 py-2.5 text-sm text-parchment placeholder-parchment-dim/40 focus:border-gold focus:ring-1 focus:ring-gold/30 outline-none transition-all"
+                />
+              </div>
+
+              {/* Origin filter */}
+              <div className="flex gap-2 flex-wrap">
+                {(["Todos", ...ORIGENS] as const).map((o) => {
+                  const active = filterOrigem === o;
+                  const style =
+                    o === "Todos"
+                      ? active
+                        ? "bg-gold text-base border-gold"
+                        : "border-surface-light text-parchment-dim hover:border-gold/40 hover:text-parchment"
+                      : active
+                        ? o === "Divino"
+                          ? "bg-arcane text-white border-arcane"
+                          : o === "Alienação"
+                            ? "bg-injury-severe text-white border-injury-severe"
+                            : "bg-gold text-base border-gold"
+                        : o === "Divino"
+                          ? "border-arcane/30 text-arcane/70 hover:border-arcane hover:text-arcane"
+                          : o === "Alienação"
+                            ? "border-injury-severe/30 text-injury-severe/70 hover:border-injury-severe hover:text-injury-severe"
+                            : "border-surface-light text-parchment-dim hover:border-gold/40 hover:text-parchment";
+
+                  return (
+                    <button
+                      key={o}
+                      onClick={() => setFilterOrigem(o as OrigemTraco | "Todos")}
+                      className={`px-3 py-2 text-xs rounded-lg border font-medium transition-all duration-200 cursor-pointer ${style}`}
+                    >
+                      {o}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Count */}
+            <p className="text-xs text-parchment-dim/50 mb-4">
+              {filtered.length} traço{filtered.length !== 1 ? "s" : ""} encontrado
+              {filtered.length !== 1 ? "s" : ""}
+            </p>
+
+            {/* Grid */}
+            {filtered.length === 0 ? (
+              <div className="text-center py-20">
+                <p className="text-parchment-dim text-sm italic">
+                  Nenhum traço encontrado com esses filtros.
+                </p>
+                <button
+                  onClick={() => {
+                    setSearch("");
+                    setFilterOrigem("Todos");
+                  }}
+                  className="mt-3 text-xs text-gold-dim hover:text-gold transition-colors cursor-pointer"
+                >
+                  Limpar filtros
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                {filtered.map((traco) => (
+                  <TracoCard key={traco.id} traco={traco} onAdd={onAddTrait} />
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

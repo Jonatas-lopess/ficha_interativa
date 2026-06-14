@@ -5,9 +5,6 @@ import { TraitCatalogRepository } from "./TraitCatalogRepository";
 import { getDatabase } from "../db";
 import { migrateFromLocalStorageDriver } from "../db/migration";
 import { startCatalogReplication } from "../db/replication/catalogReplication";
-import threatsJson from "../data/threats.json";
-import tracosCatalogJson from "../data/tracosCatalog.json";
-import { Threat } from "../types";
 
 const characterDriver = new RxDbDriver("characters");
 const threatDriver = new RxDbDriver("threats");
@@ -25,22 +22,11 @@ export async function initializeDatabase() {
       characterRepo,
       threatRepo,
       traitCatalogRepo,
+      
     );
 
-    // Seed threats
-    const existingThreats = await threatRepo.findAll();
-    if (existingThreats.length === 0 && threatsJson.length > 0) {
-      console.log("[db] Seeding threats…");
-      await threatRepo.seed(threatsJson as Partial<Threat>[]);
-    }
-
-    // Seed trait catalog
-    const existingTraits = await traitCatalogRepo.findAll();
-    if (existingTraits.length === 0 && tracosCatalogJson.length > 0) {
-      console.log("[db] Seeding traits…");
-      await traitCatalogRepo.seed(tracosCatalogJson as any[]);
-    }
-
+    // Nota: A semeadura local a partir de arquivos JSON foi depreciada.
+    // O catálogo de ameaças e traços agora é sincronizado e puxado diretamente do Supabase.
     // Inicia replicação em segundo plano com o Supabase
     await startCatalogReplication(db);
   } catch (err) {
@@ -48,3 +34,4 @@ export async function initializeDatabase() {
     throw err;
   }
 }
+
