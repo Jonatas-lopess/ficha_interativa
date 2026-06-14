@@ -475,12 +475,41 @@ export const useSheetStore = create<SheetStore>((set, get) => ({
       s.saturacaoRequisito === "Centelha" || nucleoAbilities.includes(s.nome);
 
     // 1. Expected divine traits
-    const expectedDivineTraits = dbTraits.filter(
+    const expectedDirectTraits = dbTraits.filter(
       (t) =>
         t.caminho === activePathway &&
         t.ranqueRequisito === activeRank &&
         isActive(t),
     );
+
+    const expectedSkillTraits: DivineTrait[] = [];
+    dbSkills.forEach((s) => {
+      if (
+        s.tipo === "traco" &&
+        s.caminho === activePathway &&
+        s.ranqueRequisito === activeRank
+      ) {
+        if (isActive(s)) {
+          const correspondingTrait = dbTraits.find((t) => t.nome === s.nome);
+          if (correspondingTrait) {
+            expectedSkillTraits.push({
+              ...correspondingTrait,
+              origem: "Divino",
+              caminho: s.caminho || undefined,
+              ranqueRequisito: s.ranqueRequisito || undefined,
+              saturacaoRequisito: s.saturacaoRequisito || undefined,
+            });
+          }
+        }
+      }
+    });
+
+    const expectedDivineTraits = [...expectedDirectTraits];
+    expectedSkillTraits.forEach((est) => {
+      if (!expectedDivineTraits.some((t) => t.nome === est.nome)) {
+        expectedDivineTraits.push(est);
+      }
+    });
 
     const currentDivineTraits = character.tracos.filter((t) => t.origem === "Divino");
     const missingTraits = expectedDivineTraits.filter(
