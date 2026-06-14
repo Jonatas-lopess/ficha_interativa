@@ -2,6 +2,7 @@ import { RxDbDriver } from "./drivers/rxdbDriver";
 import { CharacterRepository } from "./CharacterRepository";
 import { ThreatRepository } from "./ThreatRepository";
 import { TraitCatalogRepository } from "./TraitCatalogRepository";
+import { SkillRepository } from "./SkillRepository";
 import { getDatabase } from "../db";
 import { migrateFromLocalStorageDriver } from "../db/migration";
 import { startCatalogReplication } from "../db/replication/catalogReplication";
@@ -9,10 +10,12 @@ import { startCatalogReplication } from "../db/replication/catalogReplication";
 const characterDriver = new RxDbDriver("characters");
 const threatDriver = new RxDbDriver("threats");
 const traitDriver = new RxDbDriver("traits");
+const skillDriver = new RxDbDriver("skills");
 
 export const characterRepo = new CharacterRepository(characterDriver);
 export const threatRepo = new ThreatRepository(threatDriver);
 export const traitCatalogRepo = new TraitCatalogRepository(traitDriver);
+export const skillRepo = new SkillRepository(skillDriver);
 
 export async function initializeDatabase() {
   try {
@@ -22,7 +25,6 @@ export async function initializeDatabase() {
       characterRepo,
       threatRepo,
       traitCatalogRepo,
-      
     );
 
     // Nota: A semeadura local a partir de arquivos JSON foi depreciada.
@@ -34,4 +36,3 @@ export async function initializeDatabase() {
     throw err;
   }
 }
-

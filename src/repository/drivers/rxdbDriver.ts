@@ -1,5 +1,7 @@
-import type { RxCollection } from 'rxdb';
-import { getDatabase } from '../../db';
+import type { RxCollection } from "rxdb";
+import { Observable } from "rxjs";
+import { map } from "rxjs/operators";
+import { getDatabase } from "../../db";
 
 // ─── interface ──────────────────────────────────────────────────────────────
 
@@ -8,6 +10,7 @@ export interface DbDriver {
   put<T extends { id?: string }>(doc: T): Promise<{ id: string }>;
   remove(id: string): Promise<void>;
   findAll<T>(): Promise<T[]>;
+  observeAll<T>(): Observable<T[]>;
 }
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -18,7 +21,7 @@ function uid(): string {
 
 // ─── driver ─────────────────────────────────────────────────────────────────
 
-type CollectionName = 'characters' | 'threats' | 'traits';
+type CollectionName = "characters" | "threats" | "traits" | "skills";
 
 /**
  * RxDB-backed implementation of DbDriver.
@@ -43,7 +46,7 @@ export class RxDbDriver implements DbDriver {
     const col = await this.getCollection();
     const doc = await col.findOne(id).exec();
     if (!doc) {
-      const err = new Error('missing') as any;
+      const err = new Error("missing") as any;
       err.status = 404;
       throw err;
     }
@@ -70,7 +73,7 @@ export class RxDbDriver implements DbDriver {
     const col = await this.getCollection();
     const doc = await col.findOne(id).exec();
     if (!doc) {
-      const err = new Error('missing') as any;
+      const err = new Error("missing") as any;
       err.status = 404;
       throw err;
     }
@@ -80,6 +83,24 @@ export class RxDbDriver implements DbDriver {
   async findAll<T>(): Promise<T[]> {
     const col = await this.getCollection();
     const docs = await col.find().exec();
-    return docs.map(d => d.toJSON() as T);
+    return docs.map((d) => d.toJSON() as T);
+  }
+
+  observeAll<T>(): Observable<T[]> {
+    return new Observable<T[]>((subscriber) => {
+      let subscription: any;
+      this.getCollection()
+        .then((col) => {
+          subscription = col
+            .find()
+            .$.pipe(map((docs) => docs.map((d) => d.toJSON() as T)))
+            .subscribe(subscriber);
+        })
+        .catch((err) => subscriber.error(err));
+
+      return () => {
+        if (subscription) subscription.unsubscribe();
+      };
+    });
   }
 }

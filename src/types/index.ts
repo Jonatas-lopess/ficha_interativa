@@ -121,6 +121,18 @@ export interface DivineTrait extends Traco {
   saturacaoRequisito?: SaturacaoEstagio;
 }
 
+export interface DivineSkill {
+  id: string;
+  nome: string;
+  tipo: string;
+  caminho?: string;
+  ranqueRequisito?: RanqueNome;
+  saturacaoRequisito?: SaturacaoEstagio;
+  conceito?: string;
+  criadoEm?: string;
+  atualizadoEm?: string;
+}
+
 // --- Tipos do Sistema de Ranques ---
 export interface RankData {
   label: string;
