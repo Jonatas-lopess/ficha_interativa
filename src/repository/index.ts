@@ -4,7 +4,6 @@ import { ThreatRepository } from "./ThreatRepository";
 import { TraitCatalogRepository } from "./TraitCatalogRepository";
 import { SkillRepository } from "./SkillRepository";
 import { getDatabase } from "../db";
-import { migrateFromLocalStorageDriver } from "../db/migration";
 import { startCatalogReplication } from "../db/replication/catalogReplication";
 
 const characterDriver = new RxDbDriver("characters");
@@ -20,12 +19,6 @@ export const skillRepo = new SkillRepository(skillDriver);
 export async function initializeDatabase() {
   try {
     const db = await getDatabase();
-
-    await migrateFromLocalStorageDriver(
-      characterRepo,
-      threatRepo,
-      traitCatalogRepo,
-    );
 
     // Nota: A semeadura local a partir de arquivos JSON foi depreciada.
     // O catálogo de ameaças e traços agora é sincronizado e puxado diretamente do Supabase.
