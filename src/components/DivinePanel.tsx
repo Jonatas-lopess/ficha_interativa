@@ -30,6 +30,20 @@ interface Props {
   onUpdateAnchors: (ancoras: Ancora[]) => void;
   tracos: Traco[];
   onUpdateTraits: (tracos: Traco[]) => void;
+  aspectos: string[];
+  onUpdateAspects: (aspectos: string[]) => void;
+  proficiencias: string[];
+  onUpdateProficiencies: (proficiencias: string[]) => void;
+}
+
+interface DivineSkill {
+  id: string;
+  nome: string;
+  tipo: string;
+  caminho?: string;
+  ranqueRequisito?: RanqueNome;
+  saturacaoRequisito?: SaturacaoEstagio;
+  conceito?: string;
 }
 
 export default function DivinePanel({
@@ -39,18 +53,27 @@ export default function DivinePanel({
   onUpdateAnchors,
   tracos,
   onUpdateTraits,
+  aspectos,
+  onUpdateAspects,
+  proficiencias,
+  onUpdateProficiencies,
 }: Props) {
   const [dbTraits, setDbTraits] = useState<DivineTrait[]>([])
-  const [loading, setLoading] = useState(true)
+  const [dbSkills, setDbSkills] = useState<DivineSkill[]>([])
+  const [loadingTraits, setLoadingTraits] = useState(true)
+  const [loadingSkills, setLoadingSkills] = useState(true)
+  const loading = loadingTraits || loadingSkills
   const [expandedStage, setExpandedStage] = useState<SaturacaoEstagio | null>(null)
 
   useEffect(() => {
     let active = true
-    let sub: any
+    let subTraits: any
+    let subSkills: any
 
     getDatabase().then(db => {
       if (!active) return
-      sub = db.traits
+
+      subTraits = db.traits
         .find({
           selector: {
             origem: 'Divino'
@@ -74,26 +97,51 @@ export default function DivinePanel({
             } as DivineTrait
           })
           setDbTraits(list)
-          setLoading(false)
+          setLoadingTraits(false)
+        })
+
+      subSkills = db.skills
+        .find()
+        .$.subscribe(docs => {
+          if (!active) return
+          const list = docs.map(doc => {
+            const raw = doc.toJSON()
+            return {
+              id: raw.id,
+              nome: raw.nome || "",
+              tipo: raw.tipo || "",
+              caminho: raw.caminho || "",
+              ranqueRequisito: raw.ranqueRequisito || "",
+              saturacaoRequisito: raw.saturacaoRequisito || "",
+              conceito: raw.conceito || "",
+            } as DivineSkill
+          })
+          setDbSkills(list)
+          setLoadingSkills(false)
         })
     }).catch(err => {
       console.error("Erro ao carregar banco de dados no DivinePanel:", err)
-      if (active) setLoading(false)
+      if (active) {
+        setLoadingTraits(false)
+        setLoadingSkills(false)
+      }
     })
 
     return () => {
       active = false
-      if (sub) sub.unsubscribe()
+      if (subTraits) subTraits.unsubscribe()
+      if (subSkills) subSkills.unsubscribe()
     }
   }, [])
 
-  // Keep character.tracos in sync with unlocked/Centelha skills
+  // Keep character traits, aspects, and proficiencies in sync with unlocked/Centelha skills/traits
   useEffect(() => {
     if (loading || ranque === 'Humano') return
 
     const activePathway = divino.caminho
     const activeRank = ranque
 
+    // 1. Sync traits
     const expectedDivineTraits = dbTraits.filter(t => {
       if (t.caminho !== activePathway || t.ranqueRequisito !== activeRank) {
         return false
@@ -103,22 +151,77 @@ export default function DivinePanel({
 
     const currentDivineTraits = tracos.filter(t => t.origem === 'Divino')
 
-    const missing = expectedDivineTraits.filter(
+    const missingTraits = expectedDivineTraits.filter(
       et => !tracos.some(t => t.nome === et.nome)
     )
 
-    const outdated = currentDivineTraits.filter(
+    const outdatedTraits = currentDivineTraits.filter(
       ct => !expectedDivineTraits.some(et => et.nome === ct.nome)
     )
 
-    if (missing.length > 0 || outdated.length > 0) {
+    if (missingTraits.length > 0 || outdatedTraits.length > 0) {
       const nextTraits = [
         ...tracos.filter(t => t.origem !== 'Divino' || expectedDivineTraits.some(et => et.nome === t.nome)),
-        ...missing
+        ...missingTraits
       ]
       onUpdateTraits(nextTraits)
     }
-  }, [dbTraits, divino.caminho, divino.habilidadesNucleo, ranque, tracos, loading, onUpdateTraits])
+
+    // 2. Sync aspects
+    const dbAspects = dbSkills.filter(s => s.tipo === 'aspecto')
+    const dbAspectNames = dbAspects.map(s => s.nome)
+    const expectedAspects = dbAspects.filter(s => 
+      s.caminho === activePathway &&
+      s.ranqueRequisito === activeRank &&
+      (s.saturacaoRequisito === 'Centelha' || (divino.habilidadesNucleo || []).includes(s.nome))
+    )
+    const expectedAspectNames = expectedAspects.map(s => s.nome)
+
+    const missingAspects = expectedAspectNames.filter(name => !aspectos.includes(name))
+    const outdatedAspects = aspectos.filter(name => dbAspectNames.includes(name) && !expectedAspectNames.includes(name))
+
+    if (missingAspects.length > 0 || outdatedAspects.length > 0) {
+      const nextAspects = [
+        ...aspectos.filter(name => !dbAspectNames.includes(name) || expectedAspectNames.includes(name)),
+        ...missingAspects
+      ]
+      onUpdateAspects(nextAspects)
+    }
+
+    // 3. Sync proficiencies
+    const dbProficiencies = dbSkills.filter(s => s.tipo === 'proficiencia')
+    const dbProficiencyNames = dbProficiencies.map(s => s.nome)
+    const expectedProficiencies = dbProficiencies.filter(s => 
+      s.caminho === activePathway &&
+      s.ranqueRequisito === activeRank &&
+      (s.saturacaoRequisito === 'Centelha' || (divino.habilidadesNucleo || []).includes(s.nome))
+    )
+    const expectedProficiencyNames = expectedProficiencies.map(s => s.nome)
+
+    const missingProficiencies = expectedProficiencyNames.filter(name => !proficiencias.includes(name))
+    const outdatedProficiencies = proficiencias.filter(name => dbProficiencyNames.includes(name) && !expectedProficiencyNames.includes(name))
+
+    if (missingProficiencies.length > 0 || outdatedProficiencies.length > 0) {
+      const nextProficiencies = [
+        ...proficiencias.filter(name => !dbProficiencyNames.includes(name) || expectedProficiencyNames.includes(name)),
+        ...missingProficiencies
+      ]
+      onUpdateProficiencies(nextProficiencies)
+    }
+  }, [
+    dbTraits,
+    dbSkills,
+    divino.caminho,
+    divino.habilidadesNucleo,
+    ranque,
+    tracos,
+    aspectos,
+    proficiencias,
+    loading,
+    onUpdateTraits,
+    onUpdateAspects,
+    onUpdateProficiencies
+  ])
 
   const PATHWAYS = useMemo(() => {
     const base = ['Destruição', 'Morte']
@@ -130,19 +233,30 @@ export default function DivinePanel({
         base.push(t.caminho)
       }
     })
+    dbSkills.forEach(s => {
+      if (s.caminho && !base.includes(s.caminho)) {
+        base.push(s.caminho)
+      }
+    })
     return base
-  }, [divino.caminho, dbTraits])
+  }, [divino.caminho, dbTraits, dbSkills])
 
   const pesoInfo = PESO_DIVINO.find((p) => p.nivel === divino.pesoDivino) || PESO_DIVINO[0]
 
   const currentSatIdx = STAGE_ORDER.indexOf(divino.saturacao)
 
-  const getSkillsForStage = (stage: SaturacaoEstagio): DivineTrait[] => {
-    return dbTraits.filter(t => 
+  const getSkillsForStage = (stage: SaturacaoEstagio): (DivineTrait | DivineSkill)[] => {
+    const traits = dbTraits.filter(t => 
       t.caminho === divino.caminho &&
       t.ranqueRequisito === ranque &&
       t.saturacaoRequisito === stage
     )
+    const skills = dbSkills.filter(s => 
+      s.caminho === divino.caminho &&
+      s.ranqueRequisito === ranque &&
+      s.saturacaoRequisito === stage
+    )
+    return [...traits, ...skills]
   }
 
   const unlocked = divino.habilidadesNucleo || []
@@ -344,18 +458,24 @@ export default function DivinePanel({
                                 <span className="text-sm font-medium text-parchment">
                                   ✦ {skill.nome}
                                 </span>
-                                {getEffectTypes(skill).map((effectType) => {
-                                  const labelMap: Record<TipoEfeito, string> = {
-                                    Passivo: "Traço Passivo",
-                                    Ativável: "Traço Ativável",
-                                    Reativo: "Traço Reativo",
-                                  }
-                                  return (
-                                    <span key={effectType} className="text-[9px] px-1.5 py-0.5 bg-arcane/20 text-arcane-bright border border-arcane/30 rounded uppercase font-semibold tracking-wider">
-                                      {labelMap[effectType] || effectType}
-                                    </span>
-                                  )
-                                })}
+                                {((skill as any).tipo === 'aspecto' || (skill as any).tipo === 'proficiencia') ? (
+                                  <span className="text-[9px] px-1.5 py-0.5 bg-arcane/20 text-arcane-bright border border-arcane/30 rounded uppercase font-semibold tracking-wider">
+                                    {(skill as any).tipo === 'aspecto' ? "Aspecto" : "Proficiência"}
+                                  </span>
+                                ) : (
+                                  getEffectTypes(skill as Traco).map((effectType) => {
+                                    const labelMap: Record<TipoEfeito, string> = {
+                                      Passivo: "Traço Passivo",
+                                      Ativável: "Traço Ativável",
+                                      Reativo: "Traço Reativo",
+                                    }
+                                    return (
+                                      <span key={effectType} className="text-[9px] px-1.5 py-0.5 bg-arcane/20 text-arcane-bright border border-arcane/30 rounded uppercase font-semibold tracking-wider">
+                                        {labelMap[effectType] || effectType}
+                                      </span>
+                                    )
+                                  })
+                                )}
                               </div>
                               {skill.conceito && (
                                 <p className="text-[11px] text-parchment-dim/70 mt-1 leading-relaxed">

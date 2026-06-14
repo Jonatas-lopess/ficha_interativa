@@ -91,6 +91,15 @@ export async function startCatalogReplication(db: AppDatabase): Promise<void> {
     pull: { batchSize: 200 },
   });
 
+  const skillRep = replicateSupabase({
+    tableName: 'skills',
+    client: supabase,
+    collection: (db as any).skills,
+    replicationIdentifier: 'skills-supabase-v1',
+    live: false,
+    pull: { batchSize: 200 },
+  });
+
   const characterRep = replicateSupabase({
     tableName: 'characters',
     client: supabase,
@@ -106,10 +115,11 @@ export async function startCatalogReplication(db: AppDatabase): Promise<void> {
   // Vincula status de syncing dinamicamente
   let activeThreats = false;
   let activeTraits = false;
+  let activeSkills = false;
   let activeChars = false;
 
   const checkSyncing = () => {
-    const isSyncing = activeThreats || activeTraits || activeChars;
+    const isSyncing = activeThreats || activeTraits || activeSkills || activeChars;
     updateSyncStatus({ isSyncing });
   };
 
@@ -119,6 +129,10 @@ export async function startCatalogReplication(db: AppDatabase): Promise<void> {
   });
   traitRep.active$.subscribe(act => {
     activeTraits = act;
+    checkSyncing();
+  });
+  skillRep.active$.subscribe(act => {
+    activeSkills = act;
     checkSyncing();
   });
   characterRep.active$.subscribe(act => {
@@ -133,6 +147,7 @@ export async function startCatalogReplication(db: AppDatabase): Promise<void> {
   };
   threatRep.error$.subscribe(err => handleError('threats', err));
   traitRep.error$.subscribe(err => handleError('traits', err));
+  skillRep.error$.subscribe(err => handleError('skills', err));
   characterRep.error$.subscribe(err => handleError('characters', err));
 
   // Aguarda a sincronização inicial para garantir que o catálogo local e as fichas tenham dados atualizados
@@ -140,6 +155,7 @@ export async function startCatalogReplication(db: AppDatabase): Promise<void> {
     await Promise.all([
       threatRep.awaitInitialReplication(),
       traitRep.awaitInitialReplication(),
+      skillRep.awaitInitialReplication(),
       characterRep.awaitInitialReplication(),
     ]);
     updateSyncStatus({ isInitialSyncComplete: true, error: null });

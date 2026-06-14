@@ -217,6 +217,10 @@ export default function CompleteSheet({
                 onUpdateAnchors={handleUpdateAnchors}
                 tracos={character.tracos}
                 onUpdateTraits={(val) => updateField('tracos', val)}
+                aspectos={character.aspectos}
+                onUpdateAspects={(val) => updateField('aspectos', val)}
+                proficiencias={character.proficiencias}
+                onUpdateProficiencies={(val) => updateField('proficiencias', val)}
               />
             </div>
           )}

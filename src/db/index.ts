@@ -5,6 +5,7 @@ import { wrappedValidateAjvStorage } from 'rxdb/plugins/validate-ajv';
 import { characterSchema } from './schemas/characterSchema';
 import { threatSchema }    from './schemas/threatSchema';
 import { traitSchema }     from './schemas/traitSchema';
+import { skillSchema }     from './schemas/skillSchema';
 
 // Register migration schema plugin
 addRxPlugin(RxDBMigrationSchemaPlugin);
@@ -48,6 +49,10 @@ async function _createDb() {
     },
     traits: { 
       schema: traitSchema,
+      migrationStrategies
+    },
+    skills: {
+      schema: skillSchema,
       migrationStrategies
     },
   });
